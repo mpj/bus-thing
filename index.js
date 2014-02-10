@@ -1,3 +1,11 @@
+var mocha = require('mocha')
+var describe = mocha.describe
+var before = mocha.beforeEach
+var it = mocha.it
+var chai = require('chai')
+chai.should()
+var expect = chai.expect
+
 var createBus = function() {
   var me = {}
 
