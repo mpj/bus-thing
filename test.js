@@ -4,7 +4,8 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: Change
+// TODO: more advanced messages change detection
+// TODO: ok, coffeescript would be a LOT nicer
 
 describe('BusThing', function() {
   var bus;
@@ -58,6 +59,31 @@ describe('BusThing', function() {
       'addressB': 'messageB'
     })
 
+  })
+
+  it('change', function() {
+    var deliveries = []
+    bus
+      .change('addressA')
+      .on('addressB')
+      .then(function(s,d) {
+        deliveries.push(d)
+      })
+
+    bus.tell('addressA', 'messageA1')
+    bus.tell('addressA', 'messageA1') // Same, should be ignored
+    bus.tell('addressB', 'messageB1')
+    bus.tell('addressB', 'messageB1')
+    bus.tell('addressA', 'messageA2') // Is changed, should trigger
+
+    deliveries[1].should.deep.equal({
+      'addressA': 'messageA1',
+      'addressB': 'messageB1'
+    })
+    deliveries[3].should.deep.equal({
+      'addressA': 'messageA2',
+      'addressB': 'messageB1'
+    })
   })
 
 })

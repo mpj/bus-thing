@@ -11,14 +11,15 @@ var createBus = function() {
 
   me.log = []
 
-  var on = function(observers, address) {
+  var obs = function(type, observers, address) {
     observers = observers.slice(0)
     observers.push({
       address: address,
-      type: 'on'
+      type: type
     })
     return {
-      on: partial(on, observers),
+      on:     partial(obs, 'on'    , observers),
+      change: partial(obs, 'change', observers),
       then: function(fn) {
         handlers.push({
           fn: fn,
@@ -28,15 +29,16 @@ var createBus = function() {
     }
   }
 
-  me.on = function(address) {
-    return on([], address)
-  }
+  me.on     = partial(obs, 'on'    , [])
+  me.change = partial(obs, 'change', [])
 
   me.tell = function(address, message) {
+    var isChanged = messageMap[address] !== message
     messageMap[address] = message
     var matchingHandlers = handlers.filter(function(handler) {
       return !!find(handler.observers, function(observer) {
-        return observer.address === address
+        return observer.address === address &&
+               !(observer.type === 'change' && !isChanged)
       })
     })
     matchingHandlers.forEach(function(handler) {
