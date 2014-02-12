@@ -1,5 +1,8 @@
 var isArray = require('mout/lang/isArray')
-var contains = require('mout/array/contains')
+var pluck = require('mout/array/pluck')
+var find = require('mout/array/find')
+var partial = require('mout/function/partial')
+
 var createBus = function() {
   var me = {}
 
@@ -8,32 +11,37 @@ var createBus = function() {
 
   me.log = []
 
-  me.on = function(addresses) {
-    if (!isArray(addresses))
-      addresses = [ addresses ]
-
+  var on = function(observers, address) {
+    observers = observers.slice(0)
+    observers.push({
+      address: address,
+      type: 'on'
+    })
     return {
-      then: function(handler) {
+      on: partial(on, observers),
+      then: function(fn) {
         handlers.push({
-          fn: handler,
-          addresses: addresses
+          fn: fn,
+          observers: observers
         })
-      },
-      on: function(address) {
-        addresses.push(address)
-        return me.on(addresses)
       }
     }
+  }
+
+  me.on = function(address) {
+    return on([], address)
   }
 
   me.tell = function(address, message) {
     messageMap[address] = message
     var matchingHandlers = handlers.filter(function(handler) {
-      return contains(handler.addresses, address)
+      return !!find(handler.observers, function(observer) {
+        return observer.address === address
+      })
     })
     matchingHandlers.forEach(function(handler) {
       var delivery = {}
-      handler.addresses.forEach(function(address) {
+      pluck(handler.observers, 'address').forEach(function(address) {
         delivery[address] = messageMap[address]
       })
       var entry = {
