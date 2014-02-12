@@ -15,6 +15,25 @@ describe('BusThing', function() {
       done()
     })
     bus.tell('greeting', 'hello!')
+    bus.log[0].should.deep.equal({
+      received: { 'greeting': 'hello!' },
+      sent: null
+    })
+  })
+
+  it('sends response', function() {
+    bus.on('greeting').then(function(s, d) {
+      s('render', d.greeting)
+    })
+    bus.tell('greeting', 'hai world')
+    bus.log[0].should.deep.equal({
+      received: { 'greeting': 'hai world' },
+      sent: { 'render': 'hai world'}
+    })
+    bus.log[1].should.deep.equal({
+      unhandled: [ 'render', 'hai world' ]
+    })
+
   })
 
   it('dual messages', function() {

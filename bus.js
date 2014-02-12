@@ -6,6 +6,8 @@ var createBus = function() {
   var handlers = []
   var messageMap = {}
 
+  me.log = []
+
   me.on = function(addresses) {
     if (!isArray(addresses))
       addresses = [ addresses ]
@@ -26,19 +28,31 @@ var createBus = function() {
 
   me.tell = function(address, message) {
     messageMap[address] = message
-    handlers.forEach(function(handler) {
-      var isListening = contains(handler.addresses, address)
-      if(isListening) {
-        var delivery = {}
-        handler.addresses.forEach(function(address) {
-          delivery[address] = messageMap[address]
-        })
-        handler.fn(null, delivery)
-      }
+    var matchingHandlers = handlers.filter(function(handler) {
+      return contains(handler.addresses, address)
     })
+    matchingHandlers.forEach(function(handler) {
+      var delivery = {}
+      handler.addresses.forEach(function(address) {
+        delivery[address] = messageMap[address]
+      })
+      var entry = {
+        received: delivery,
+        sent: null
+      }
+      me.log.push(entry)
+      var send = function(address, message) {
+        entry.sent = entry.sent || {}
+        entry.sent[address] = message
+        me.tell(address, message)
+      }
+      handler.fn(send, delivery)
+    })
+    if (matchingHandlers.length === 0)
+      me.log.push({
+        unhandled: [ address, message ]
+      })
   }
-
-
 
   return me;
 }
