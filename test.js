@@ -5,6 +5,9 @@ var expect = chai.expect
 chai.should()
 
 // TODO: ok, coffeescript would be a LOT nicer
+// TODO: log output correctly in correct order
+// TODO: Just one message should be implicit
+// TODO: rename send to out (tell to in?)
 
 describe('BusThing', function() {
   var bus;
