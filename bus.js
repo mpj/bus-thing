@@ -17,9 +17,7 @@ var createBus = function() {
       address: address,
       type: type
     })
-    return {
-      on:     partial(obs, 'on'    , observers),
-      change: partial(obs, 'change', observers),
+    var me = {
       then: function(fn) {
         handlers.push({
           fn: fn,
@@ -27,10 +25,19 @@ var createBus = function() {
         })
       }
     }
+    extendWithObserveMethods(me, observers)
+    return me
   }
 
-  me.on     = partial(obs, 'on'    , [])
-  me.change = partial(obs, 'change', [])
+  var extendWithObserveMethods = function(target, observers) {
+    target.on     = partial(obs, 'on'    , observers)
+    target.change = partial(obs, 'change', observers)
+    target.next   = partial(obs, 'next'  , observers)
+  }
+
+  extendWithObserveMethods(me, [])
+
+
 
   me.tell = function(address, message) {
     var isChanged = messageMap[address] !== message
@@ -38,9 +45,11 @@ var createBus = function() {
     var matchingHandlers = handlers.filter(function(handler) {
       return !!find(handler.observers, function(observer) {
         return observer.address === address &&
-               !(observer.type === 'change' && !isChanged)
+               !(observer.type === 'change' && !isChanged) &&
+               observer.type !== 'peek'
       })
     })
+
     matchingHandlers.forEach(function(handler) {
       var delivery = {}
       pluck(handler.observers, 'address').forEach(function(address) {
@@ -57,6 +66,11 @@ var createBus = function() {
         me.tell(address, message)
       }
       handler.fn(send, delivery)
+
+      handler.observers.forEach(function(observer) {
+        if (observer.type === 'next')
+          observer.type = 'peek'
+      })
     })
     if (matchingHandlers.length === 0)
       me.log.push({

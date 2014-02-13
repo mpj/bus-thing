@@ -6,6 +6,7 @@ chai.should()
 
 // TODO: more advanced messages change detection
 // TODO: ok, coffeescript would be a LOT nicer
+// TODO: when
 
 describe('BusThing', function() {
   var bus;
@@ -84,6 +85,33 @@ describe('BusThing', function() {
       'addressA': 'messageA2',
       'addressB': 'messageB1'
     })
+  })
+
+  it('next', function() {
+    var deliveries = []
+    bus
+      .next('greeting')
+      .then(function(s,d) { deliveries.push(d) })
+    bus.tell('greeting', 'hello')
+    bus.tell('greeting', 'hi')
+    deliveries.should.deep.equal([{
+      'greeting': 'hello'
+    }])
+  })
+
+  it('when', function() {
+    var deliveries = []
+    bus
+      .when('isReady')
+      .then(function(s, d) { deliveries.push(d) })
+    bus.tell('isReady', false)
+    bus.tell('isReady', true)
+    bus.tell('isReady', true)
+
+    deliveries.should.deep.equal([
+      { 'isReady': true },
+      { 'isReady': true }
+    ])
   })
 
 })
