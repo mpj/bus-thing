@@ -2,6 +2,7 @@ var isArray = require('mout/lang/isArray')
 var pluck = require('mout/array/pluck')
 var find = require('mout/array/find')
 var partial = require('mout/function/partial')
+var deepEqual = require('deep-equal')
 
 var createBus = function() {
   var me = {}
@@ -30,9 +31,14 @@ var createBus = function() {
   }
 
   var extendWithObserveMethods = function(target, observers) {
-    target.on     = partial(obs, 'on'    , observers)
-    target.change = partial(obs, 'change', observers)
-    target.next   = partial(obs, 'next'  , observers)
+    [ 'on',
+      'change',
+      'next',
+      'when'
+    ].forEach(function(type) {
+      target[type] = partial(obs, type, observers)
+    })
+
   }
 
   extendWithObserveMethods(me, [])
@@ -40,12 +46,13 @@ var createBus = function() {
 
 
   me.tell = function(address, message) {
-    var isChanged = messageMap[address] !== message
+    var isChanged = !deepEqual(messageMap[address], message)
     messageMap[address] = message
     var matchingHandlers = handlers.filter(function(handler) {
       return !!find(handler.observers, function(observer) {
         return observer.address === address &&
                !(observer.type === 'change' && !isChanged) &&
+               !(observer.type === 'when'   && !message) &&
                observer.type !== 'peek'
       })
     })

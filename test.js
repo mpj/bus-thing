@@ -4,9 +4,7 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: more advanced messages change detection
 // TODO: ok, coffeescript would be a LOT nicer
-// TODO: when
 
 describe('BusThing', function() {
   var bus;
@@ -86,6 +84,31 @@ describe('BusThing', function() {
       'addressB': 'messageB1'
     })
   })
+
+  it('change (deep equals)', function() {
+    var deliveries = []
+    bus
+      .change('buy')
+      .then(function(s,d) {
+        deliveries.push(d)
+      })
+
+    bus.tell('buy', {
+      orders: [
+        { price: 123.2  },
+        { price: 817.21 },
+      ]
+    })
+    bus.tell('buy', {
+      orders: [
+        { price: 123.2  },
+        { price: 817.21 },
+      ]
+    })
+
+    deliveries.length.should.equal(1)
+  })
+
 
   it('next', function() {
     var deliveries = []
