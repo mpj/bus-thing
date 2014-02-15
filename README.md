@@ -8,12 +8,12 @@ var createBus = require('bus-thing')
 
 var bus = createBus()
 
-bus.on('greeting').then(function(out, delivery) {
-  out('render', '<p>' + delivery.greeting + '</p>')
+bus.on('greeting').then(function(out, deliveries) {
+  out('render', '<p>' + deliveries.greeting + '</p>')
 })
 
-bus.on('render').then(function(out, delivery) {
-  document.write(delivery.render)
+bus.on('render').then(function(out, deliveries) {
+  document.write(deliveries.render)
 })
 
 bus.tell('greeting', 'Hello!') // Writes '<p>Hello!</p>'
@@ -22,7 +22,6 @@ bus.tell('greeting', 'Hello!') // Writes '<p>Hello!</p>'
 ## Listen to multiple addresses
 ```javascript
 bus
-  // isLoading + items = user-items-empty
   .on('isLoading')
   .on('items')
   .then(function(out, delivery) {
