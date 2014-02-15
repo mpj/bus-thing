@@ -57,20 +57,27 @@ var createBus = function() {
 
     matchingHandlers.forEach(function(handler) {
       var delivery = {}
+      var messages = []
       pluck(handler.observers, 'address').forEach(function(address) {
-        delivery[address] = messageMap[address]
+        var message = messageMap[address]
+        delivery[address] = message
+        messages.push(message)
       })
       var entry = {
         received: delivery,
         sent: null
       }
       me.log.push(entry)
-      var out = function(address, message) {
+
+      function tell(address, message) {
         entry.sent = entry.sent || {}
         entry.sent[address] = message
         me.inject(address, message)
       }
-      handler.fn(out, delivery)
+
+      var commands = { tell: tell }
+
+      handler.fn.apply(commands, messages)
 
       handler.observers.forEach(function(observer) {
         if (observer.type === 'next')
