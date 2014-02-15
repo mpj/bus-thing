@@ -67,12 +67,12 @@ var createBus = function() {
         sent: null
       }
       me.log.push(entry)
-      var send = function(address, message) {
+      var out = function(address, message) {
         entry.sent = entry.sent || {}
         entry.sent[address] = message
         me.tell(address, message)
       }
-      handler.fn(send, delivery)
+      handler.fn(out, delivery)
 
       handler.observers.forEach(function(observer) {
         if (observer.type === 'next')
