@@ -7,7 +7,6 @@ chai.should()
 // TODO: ok, coffeescript would be a LOT nicer
 // TODO: log output correctly in correct order
 // TODO: Just one message should be implicit
-// TODO: rename send to out (tell to in?)
 
 describe('BusThing', function() {
   var bus;
@@ -20,7 +19,7 @@ describe('BusThing', function() {
       assert(d.greeting, 'hello!')
       done()
     })
-    bus.tell('greeting', 'hello!')
+    bus.inject('greeting', 'hello!')
     bus.log[0].should.deep.equal({
       received: { 'greeting': 'hello!' },
       sent: null
@@ -31,7 +30,7 @@ describe('BusThing', function() {
     bus.on('greeting').then(function(s, d) {
       s('render', d.greeting)
     })
-    bus.tell('greeting', 'hai world')
+    bus.inject('greeting', 'hai world')
     bus.log[0].should.deep.equal({
       received: { 'greeting': 'hai world' },
       sent: { 'render': 'hai world'}
@@ -50,8 +49,8 @@ describe('BusThing', function() {
       .then(function(s,d) {
         deliveries.push(d)
       })
-    bus.tell('addressA', 'messageA')
-    bus.tell('addressB', 'messageB')
+    bus.inject('addressA', 'messageA')
+    bus.inject('addressB', 'messageB')
     deliveries[0].should.deep.equal({
       'addressA': 'messageA',
       'addressB': undefined
@@ -72,11 +71,11 @@ describe('BusThing', function() {
         deliveries.push(d)
       })
 
-    bus.tell('addressA', 'messageA1')
-    bus.tell('addressA', 'messageA1') // Same, should be ignored
-    bus.tell('addressB', 'messageB1')
-    bus.tell('addressB', 'messageB1')
-    bus.tell('addressA', 'messageA2') // Is changed, should trigger
+    bus.inject('addressA', 'messageA1')
+    bus.inject('addressA', 'messageA1') // Same, should be ignored
+    bus.inject('addressB', 'messageB1')
+    bus.inject('addressB', 'messageB1')
+    bus.inject('addressA', 'messageA2') // Is changed, should trigger
 
     deliveries[1].should.deep.equal({
       'addressA': 'messageA1',
@@ -96,13 +95,13 @@ describe('BusThing', function() {
         deliveries.push(d)
       })
 
-    bus.tell('buy', {
+    bus.inject('buy', {
       orders: [
         { price: 123.2  },
         { price: 817.21 },
       ]
     })
-    bus.tell('buy', {
+    bus.inject('buy', {
       orders: [
         { price: 123.2  },
         { price: 817.21 },
@@ -118,8 +117,8 @@ describe('BusThing', function() {
     bus
       .next('greeting')
       .then(function(s,d) { deliveries.push(d) })
-    bus.tell('greeting', 'hello')
-    bus.tell('greeting', 'hi')
+    bus.inject('greeting', 'hello')
+    bus.inject('greeting', 'hi')
     deliveries.should.deep.equal([{
       'greeting': 'hello'
     }])
@@ -130,9 +129,9 @@ describe('BusThing', function() {
     bus
       .when('isReady')
       .then(function(s, d) { deliveries.push(d) })
-    bus.tell('isReady', false)
-    bus.tell('isReady', true)
-    bus.tell('isReady', true)
+    bus.inject('isReady', false)
+    bus.inject('isReady', true)
+    bus.inject('isReady', true)
 
     deliveries.should.deep.equal([
       { 'isReady': true },

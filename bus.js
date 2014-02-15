@@ -43,9 +43,7 @@ var createBus = function() {
 
   extendWithObserveMethods(me, [])
 
-
-
-  me.tell = function(address, message) {
+  me.inject = function(address, message) {
     var isChanged = !deepEqual(messageMap[address], message)
     messageMap[address] = message
     var matchingHandlers = handlers.filter(function(handler) {
@@ -70,7 +68,7 @@ var createBus = function() {
       var out = function(address, message) {
         entry.sent = entry.sent || {}
         entry.sent[address] = message
-        me.tell(address, message)
+        me.inject(address, message)
       }
       handler.fn(out, delivery)
 
