@@ -3,6 +3,7 @@ var pluck = require('mout/array/pluck')
 var find = require('mout/array/find')
 var partial = require('mout/function/partial')
 var deepEqual = require('deep-equal')
+var isFunction = require('mout/lang/isFunction')
 
 var createBus = function() {
   var me = {}
@@ -12,15 +13,17 @@ var createBus = function() {
 
   me.log = []
 
-  var obs = function(type, observers, address) {
-    if (!!arguments[3])
+  var obs = function(type, observers, address, message) {
+    if (isFunction(message))
       throw new Error(
-        '"'+type+'" only accepts one argument, which is address.')
+        'Second argument to "' + type + '" was a function. ' +
+        'Expected message matcher.')
 
     observers = observers.slice(0)
     observers.push({
       address: address,
-      type: type
+      message: message,
+      type: type,
     })
     var me = {
       then: function(fn) {
@@ -48,12 +51,18 @@ var createBus = function() {
   extendWithObserveMethods(me, [])
 
   me.inject = function(address, message) {
-    var isChanged = !deepEqual(messageMap[address], message)
-    messageMap[address] = message
+    // Note if this is message differs from the last one
+    // sent on the same address before changing it.
+    var wasChanged = !deepEqual(
+      messageMap[address], message)
+      messageMap[address] = message
+
     var matchingHandlers = handlers.filter(function(handler) {
       return !!find(handler.observers, function(observer) {
+        if (observer.message && !deepEqual(observer.message, message))
+          return false;
         return observer.address === address &&
-               !(observer.type === 'change' && !isChanged) &&
+               !(observer.type === 'change' && !wasChanged) &&
                !(observer.type === 'when'   && !message) &&
                observer.type !== 'peek'
       })

@@ -4,9 +4,6 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// envelope is a better word than delivery
-// Simple debug log messaging
-// messageComparators in "on"
 // pure messages as argument to "then" instead of fn
 
 describe('BusThing', function() {
@@ -124,6 +121,35 @@ describe('BusThing', function() {
     noDeliveries.should.equal(1)
   })
 
+  it('can also detect message in on', function() {
+    bus.on('picky-handler', {
+      arr: [
+        { prop: 1 }
+      ]
+    }).then(function() {
+      this.send('ok', true)
+    })
+    bus.inject('picky-handler', {
+      arr: [
+        { prop: 2 } // <- different
+      ]
+    })
+    bus.log[0].should.deep.equal({
+      unhandled: [ 'picky-handler', {
+        arr: [
+          { prop: 2 } // <- different
+        ]
+      }]
+    })
+    bus.inject('picky-handler', {
+      arr: [
+        { prop: 1 } // <- correct
+      ]
+    })
+    bus.log[1].sent.should.deep.equal(
+      { 'ok': true })
+  })
+
 
   it('next', function() {
     var greetings = []
@@ -152,7 +178,7 @@ describe('BusThing', function() {
       bus.on('greeting', function(x) {
         // this would never have been executed
       })
-    }).should.throw('"on" only accepts one argument, which is address.')
+    }).should.throw('Second argument to "on" was a function. Expected message matcher.')
   })
 
   it('should also watch change', function() {
@@ -160,7 +186,9 @@ describe('BusThing', function() {
       bus.change('greeting', function(x) {
         // this would never have been executed
       })
-    }).should.throw('"change" only accepts one argument, which is address.')
+    }).should.throw('Second argument to "change" was a function. Expected message matcher.')
   })
+
+
 
 })
