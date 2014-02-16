@@ -9,9 +9,6 @@ chai.should()
 // messageComparators in "on"
 // pure messages as argument to "then" instead of fn
 
-// * TODO: I've changed my mind, send is simpler than tell
-// because it fits with the address/message analogy.
-
 describe('BusThing', function() {
   var bus;
   beforeEach(function() {
@@ -32,7 +29,7 @@ describe('BusThing', function() {
 
   it('sends response', function() {
     bus.on('greeting').then(function(x) {
-      this.tell('render', x)
+      this.send('render', x)
     })
     bus.inject('greeting', 'hai world')
     bus.log[0].should.deep.equal({
@@ -46,20 +43,20 @@ describe('BusThing', function() {
   })
 
   it('dual messages', function() {
-    var deliveries = []
+    var sent = []
     bus
       .on('addressA')
       .on('addressB')
       .then(function(a, b) {
-        deliveries.push({ a: a, b: b })
+        sent.push({ a: a, b: b })
       })
     bus.inject('addressA', 'messageA')
     bus.inject('addressB', 'messageB')
-    deliveries[0].should.deep.equal({
+    sent[0].should.deep.equal({
       'a': 'messageA',
       'b': undefined
     })
-    deliveries[1].should.deep.equal({
+    sent[1].should.deep.equal({
       'a': 'messageA',
       'b': 'messageB'
     })
@@ -67,11 +64,11 @@ describe('BusThing', function() {
 
   it('dual messages should be logged on first entry', function() {
     bus.on('a').then(function() {
-      this.tell('b', true)
-      this.tell('c', true)
+      this.send('b', true)
+      this.send('c', true)
     })
     bus.on('b').then(function() {
-      this.tell('d')
+      this.send('d')
     })
     bus.inject('a')
     bus.log[0].sent['b'].should.exist
@@ -79,12 +76,12 @@ describe('BusThing', function() {
   })
 
   it('change', function() {
-    var deliveries = []
+    var sent = []
     bus
       .change('addressA')
       .on('addressB')
       .then(function(a, b) {
-        deliveries.push({a:a,b:b})
+        sent.push({a:a,b:b})
       })
 
     bus.inject('addressA', 'messageA1')
@@ -93,11 +90,11 @@ describe('BusThing', function() {
     bus.inject('addressB', 'messageB1')
     bus.inject('addressA', 'messageA2') // Is changed, should trigger
 
-    deliveries[1].should.deep.equal({
+    sent[1].should.deep.equal({
       'a': 'messageA1',
       'b': 'messageB1'
     })
-    deliveries[3].should.deep.equal({
+    sent[3].should.deep.equal({
       'a': 'messageA2',
       'b': 'messageB1'
     })
@@ -139,15 +136,15 @@ describe('BusThing', function() {
   })
 
   it('when', function() {
-    var deliveries = []
+    var sent = []
     bus
       .when('isReady')
-      .then(function(ready) { deliveries.push(ready) })
+      .then(function(ready) { sent.push(ready) })
     bus.inject('isReady', false)
     bus.inject('isReady', true)
     bus.inject('isReady', true)
 
-    deliveries.should.deep.equal([true, true])
+    sent.should.deep.equal([true, true])
   })
 
   it('throws an error when accidentally using node callbacks', function() {
