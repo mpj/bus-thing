@@ -4,12 +4,15 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: ok, coffeescript would be a LOT nicer
-// TODO: log output correctly in correct order
-// TODO: Just one message should be implicit
 // TODO: helpful error when calling like this
 // bus.on('greeting', function(d,s)
 // envelope is a better word than delivery
+// Simple debug log messaging
+// messageComparators in "on"
+// pure messages as argument to "then" instead of fn
+
+// * TODO: I've changed my mind, send is simpler than tell
+// because it fits with the address/message analogy.
 
 describe('BusThing', function() {
   var bus;
@@ -62,7 +65,19 @@ describe('BusThing', function() {
       'a': 'messageA',
       'b': 'messageB'
     })
+  })
 
+  it('dual messages should be logged on first entry', function() {
+    bus.on('a').then(function() {
+      this.tell('b', true)
+      this.tell('c', true)
+    })
+    bus.on('b').then(function() {
+      this.tell('d')
+    })
+    bus.inject('a')
+    bus.log[0].sent['b'].should.exist
+    bus.log[0].sent['c'].should.exist
   })
 
   it('change', function() {
