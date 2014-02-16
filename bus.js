@@ -4,6 +4,7 @@ var find = require('mout/array/find')
 var partial = require('mout/function/partial')
 var deepEqual = require('deep-equal')
 var isFunction = require('mout/lang/isFunction')
+var isUndefined = require('mout/lang/isUndefined')
 
 var createBus = function() {
   var me = {}
@@ -63,6 +64,7 @@ var createBus = function() {
   extendWithObserveMethods(me, [])
 
   me.inject = function(address, message) {
+    message = isUndefined(message) ? true : message
     // Note if this is message differs from the last one
     // sent on the same address before changing it.
     var wasChanged = !deepEqual(

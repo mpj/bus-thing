@@ -221,4 +221,28 @@ describe('BusThing', function() {
     bus.log.wasSent('greeting').should.be.true
   })
 
+  it('no message should be implicit true', function(done) {
+    bus.on('generic-message').then(function(msg) {
+      msg.should.be.true
+      done()
+    })
+    bus.inject('generic-message')
+  })
+
+  it('null should count as message payload ', function(done) {
+    bus.on('generic-message').then(function(msg) {
+      expect(msg).to.be.null
+      done()
+    })
+    bus.inject('generic-message', null)
+  })
+
+  it('false should count as message payload ', function(done) {
+    bus.on('generic-message').then(function(msg) {
+      expect(msg).to.be.false
+      done()
+    })
+    bus.inject('generic-message', false)
+  })
+
 })
