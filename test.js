@@ -4,7 +4,6 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO log.wasSent
 
 describe('BusThing', function() {
   var bus;
@@ -211,6 +210,15 @@ describe('BusThing', function() {
     })
     bus.inject('init')
     bus.log.wasSent('greeting', { txt: ['hi!'] }).should.be.false
+  })
+
+  it('wasSent (only address)', function() {
+    bus.on('init').then(function() {
+      this.send('greeting', 'irrelephant')
+    })
+    bus.log.wasSent('greeting').should.be.false
+    bus.inject('init')
+    bus.log.wasSent('greeting').should.be.true
   })
 
 })

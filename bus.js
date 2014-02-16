@@ -16,7 +16,9 @@ var createBus = function() {
     all: function() { return logEntries },
     wasSent: function(addr, msg) {
       return !!find(logEntries, function(entry) {
-        return entry.sent && deepEqual(entry.sent[addr], msg)
+        if (!entry.sent) return false
+        if (!msg) return entry.sent.hasOwnProperty(addr)
+        return deepEqual(entry.sent[addr], msg)
       })
     }
   }
