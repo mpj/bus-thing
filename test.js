@@ -196,12 +196,21 @@ describe('BusThing', function() {
       [ 'oven-on', true ])
   })
 
-  xit('wasSent (true)', function() {
+  it('wasSent (true)', function() {
     bus.on('init').then(function() {
-      this.send('greeting', 'hi!')
+      this.send('greeting', { txt: ['hi!'] } )
+    })
+    bus.log.wasSent('greeting', { txt: ['hi!'] }).should.be.false
+    bus.inject('init')
+    bus.log.wasSent('greeting', { txt: ['hi!'] }).should.be.true
+  })
+
+  it('wasSent (false)', function() {
+    bus.on('init').then(function() {
+      this.send('greeting', { txt: ['hello!'] })
     })
     bus.inject('init')
-    bus.log.all().wasSent('greeting', 'hi!')
+    bus.log.wasSent('greeting', { txt: ['hi!'] }).should.be.false
   })
 
 })

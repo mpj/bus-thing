@@ -13,7 +13,12 @@ var createBus = function() {
 
   var logEntries = []
   me.log = {
-    all: function() { return logEntries }
+    all: function() { return logEntries },
+    wasSent: function(addr, msg) {
+      return !!find(logEntries, function(entry) {
+        return entry.sent && deepEqual(entry.sent[addr], msg)
+      })
+    }
   }
 
   var obs = function(type, observers, address, message) {
