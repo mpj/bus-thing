@@ -4,6 +4,8 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
+// TODO log.wasSent
+
 describe('BusThing', function() {
   var bus;
   beforeEach(function() {
@@ -16,7 +18,7 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('greeting', 'hello!')
-    bus.log[0].should.deep.equal({
+    bus.log.all()[0].should.deep.equal({
       received: { 'greeting': 'hello!' },
       sent: null
     })
@@ -27,11 +29,11 @@ describe('BusThing', function() {
       this.send('render', x)
     })
     bus.inject('greeting', 'hai world')
-    bus.log[0].should.deep.equal({
+    bus.log.all()[0].should.deep.equal({
       received: { 'greeting': 'hai world' },
       sent: { 'render': 'hai world'}
     })
-    bus.log[1].should.deep.equal({
+    bus.log.all()[1].should.deep.equal({
       unhandled: [ 'render', 'hai world' ]
     })
 
@@ -66,8 +68,8 @@ describe('BusThing', function() {
       this.send('d')
     })
     bus.inject('a')
-    bus.log[0].sent['b'].should.exist
-    bus.log[0].sent['c'].should.exist
+    bus.log.all()[0].sent['b'].should.exist
+    bus.log.all()[0].sent['c'].should.exist
   })
 
   it('change', function() {
@@ -132,7 +134,7 @@ describe('BusThing', function() {
         { prop: 2 } // <- different
       ]
     })
-    bus.log[0].should.deep.equal({
+    bus.log.all()[0].should.deep.equal({
       unhandled: [ 'picky-handler', {
         arr: [
           { prop: 2 } // <- different
@@ -144,7 +146,7 @@ describe('BusThing', function() {
         { prop: 1 } // <- correct
       ]
     })
-    bus.log[1].sent.should.deep.equal(
+    bus.log.all()[1].sent.should.deep.equal(
       { 'ok': true })
   })
 
@@ -190,8 +192,16 @@ describe('BusThing', function() {
   it('then accepts pure envelopes', function() {
     bus.on('cook').then('oven-on', true)
     bus.inject('cook')
-    bus.log[1].unhandled.should.deep.equal(
+    bus.log.all()[1].unhandled.should.deep.equal(
       [ 'oven-on', true ])
+  })
+
+  xit('wasSent (true)', function() {
+    bus.on('init').then(function() {
+      this.send('greeting', 'hi!')
+    })
+    bus.inject('init')
+    bus.log.all().wasSent('greeting', 'hi!')
   })
 
 })

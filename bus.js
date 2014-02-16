@@ -11,7 +11,10 @@ var createBus = function() {
   var handlers = []
   var messageMap = {}
 
-  me.log = []
+  var logEntries = []
+  me.log = {
+    all: function() { return logEntries }
+  }
 
   var obs = function(type, observers, address, message) {
     if (isFunction(message))
@@ -82,7 +85,7 @@ var createBus = function() {
         received: receivedMap,
         sent: null // Will be filled below by send
       }
-      me.log.push(entry)
+      logEntries.push(entry)
 
       function send(address, message) {
         entry.sent = entry.sent || {}
@@ -100,7 +103,7 @@ var createBus = function() {
       })
     })
     if (matchingHandlers.length === 0)
-      me.log.push({
+      logEntries.push({
         unhandled: [ address, message ]
       })
   }
