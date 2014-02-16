@@ -13,6 +13,10 @@ var createBus = function() {
   me.log = []
 
   var obs = function(type, observers, address) {
+    if (!!arguments[3])
+      throw new Error(
+        '"'+type+'" only accepts one argument, which is address.')
+
     observers = observers.slice(0)
     observers.push({
       address: address,

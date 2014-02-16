@@ -4,8 +4,6 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: helpful error when calling like this
-// bus.on('greeting', function(d,s)
 // envelope is a better word than delivery
 // Simple debug log messaging
 // messageComparators in "on"
@@ -150,6 +148,22 @@ describe('BusThing', function() {
     bus.inject('isReady', true)
 
     deliveries.should.deep.equal([true, true])
+  })
+
+  it('throws an error when accidentally using node callbacks', function() {
+    (function() {
+      bus.on('greeting', function(x) {
+        // this would never have been executed
+      })
+    }).should.throw('"on" only accepts one argument, which is address.')
+  })
+
+  it('should also watch change', function() {
+    (function() {
+      bus.change('greeting', function(x) {
+        // this would never have been executed
+      })
+    }).should.throw('"change" only accepts one argument, which is address.')
   })
 
 })
