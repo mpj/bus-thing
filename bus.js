@@ -26,7 +26,9 @@ var createBus = function() {
       type: type,
     })
     var me = {
-      then: function(fn) {
+      then: function(fnOrAddress, message) {
+        var fn = isFunction(fnOrAddress) ? fnOrAddress :
+          function() { this.send(fnOrAddress, message) }
         handlers.push({
           fn: fn,
           observers: observers

@@ -4,8 +4,6 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// pure messages as argument to "then" instead of fn
-
 describe('BusThing', function() {
   var bus;
   beforeEach(function() {
@@ -189,6 +187,11 @@ describe('BusThing', function() {
     }).should.throw('Second argument to "change" was a function. Expected message matcher.')
   })
 
-
+  it('then accepts pure envelopes', function() {
+    bus.on('cook').then('oven-on', true)
+    bus.inject('cook')
+    bus.log[1].unhandled.should.deep.equal(
+      [ 'oven-on', true ])
+  })
 
 })
