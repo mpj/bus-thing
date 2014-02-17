@@ -234,7 +234,7 @@ describe('BusThing', function() {
     bus.log.wasSent('greeting').should.be.true
   })
 
-  it('no message should be implicit true', function(done) {
+  it('no message should be implicit true (callback)', function(done) {
     bus.on('generic-message').then(function(msg) {
       msg.should.be.true
       done()
@@ -242,12 +242,30 @@ describe('BusThing', function() {
     bus.inject('generic-message')
   })
 
-  it('null should count as message payload ', function(done) {
+  it('no message should be implicit true (log)', function(done) {
+    bus.on('start').then(function(msg) {
+      this.send('hai')
+      done()
+    })
+    bus.inject('start')
+    bus.log.all()[0].sent.hai.should.equal(true)
+  })
+
+  it('null should count as message payload', function(done) {
     bus.on('generic-message').then(function(msg) {
       expect(msg).to.be.null
       done()
     })
     bus.inject('generic-message', null)
+  })
+
+  it('null should count as message payload (log)', function(done) {
+    bus.on('start').then(function(msg) {
+      this.send('hai', null)
+      done()
+    })
+    bus.inject('start')
+    expect(bus.log.all()[0].sent.hai).to.be.null
   })
 
   it('false should count as message payload ', function(done) {

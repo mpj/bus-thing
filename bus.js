@@ -113,7 +113,7 @@ var createBus = function() {
 
       function send(address, message) {
         entry.sent = entry.sent || {}
-        entry.sent[address] = message
+        entry.sent[address] = isUndefined(message) ? true : message
         me.inject(address, message)
       }
 
