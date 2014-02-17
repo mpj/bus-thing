@@ -43,7 +43,7 @@ var createBus = function() {
       message: message,
       type: type,
     })
-    var me = {
+    var cmd = {
       then: function(fnOrAddress, message) {
         var fn = isFunction(fnOrAddress) ? fnOrAddress :
           function() { this.send(fnOrAddress, message) }
@@ -51,10 +51,11 @@ var createBus = function() {
           fn: fn,
           observers: observers
         })
+        return me
       }
     }
-    extendWithObserveMethods(me, observers)
-    return me
+    extendWithObserveMethods(cmd, observers)
+    return cmd
   }
 
   var extendWithObserveMethods = function(target, observers) {

@@ -59,13 +59,14 @@ describe('BusThing', function() {
   })
 
   it('dual messages should be logged on first entry', function() {
-    bus.on('a').then(function() {
-      this.send('b', true)
-      this.send('c', true)
-    })
-    bus.on('b').then(function() {
-      this.send('d')
-    })
+    bus
+      .on('a').then(function() {
+        this.send('b', true)
+        this.send('c', true)
+      })
+      .on('b').then(function() {
+        this.send('d')
+      })
     bus.inject('a')
     bus.log.all()[0].sent['b'].should.exist
     bus.log.all()[0].sent['c'].should.exist
@@ -182,10 +183,11 @@ describe('BusThing', function() {
 
   it('errors when calling bus.inject from inside transform', function() {
     (function() {
-      bus.on('greeting').then(function(x) {
-        bus.inject('hej')
-      })
-      bus.inject('greeting')
+      bus
+        .on('greeting').then(function(x) {
+          bus.inject('hej')
+        })
+        .inject('greeting')
     }).should.throw(
       'Illegal call to inject method from inside handler. ' +
       'Use this.send instead.')
