@@ -180,6 +180,17 @@ describe('BusThing', function() {
     }).should.throw('Second argument to "on" was a function. Expected message matcher.')
   })
 
+  it('errors when calling bus.inject from inside transform', function() {
+    (function() {
+      bus.on('greeting').then(function(x) {
+        bus.inject('hej')
+      })
+      bus.inject('greeting')
+    }).should.throw(
+      'Illegal call to inject method from inside handler. ' +
+      'Use this.send instead.')
+  })
+
   it('should also watch change', function() {
     (function() {
       bus.change('greeting', function(x) {

@@ -13,6 +13,13 @@ var createBus = function() {
   var messageMap = {}
 
   var logEntries = []
+
+  function isHandler(fn) {
+    return !!find(handlers, function(handler) {
+      return handler.fn === fn
+    })
+  }
+
   me.log = {
     all: function() { return logEntries },
     wasSent: function(addr, msg) {
@@ -64,6 +71,13 @@ var createBus = function() {
   extendWithObserveMethods(me, [])
 
   me.inject = function(address, message) {
+
+    if (isHandler(me.inject.caller))
+      throw new Error(
+        'Illegal call to inject method from inside handler. ' +
+        'Use this.send instead.')
+
+
     message = isUndefined(message) ? true : message
     // Note if this is message differs from the last one
     // sent on the same address before changing it.
