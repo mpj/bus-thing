@@ -4,6 +4,9 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
+// TODO: make envelopes more consistent.
+// Do arrays of raw envelopes in sent, and create
+// an object with raw, interpreted props
 
 describe('BusThing', function() {
   var bus;
@@ -19,7 +22,7 @@ describe('BusThing', function() {
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
       received: { 'greeting': 'hello!' },
-      sent: null
+      sent: []
     })
   })
 
@@ -30,7 +33,7 @@ describe('BusThing', function() {
     bus.inject('greeting', 'hai world')
     bus.log.all()[0].should.deep.equal({
       received: { 'greeting': 'hai world' },
-      sent: { 'render': 'hai world'}
+      sent: [[ 'render', 'hai world' ]]
     })
     bus.log.all()[1].should.deep.equal({
       unhandled: [ 'render', 'hai world' ]
@@ -68,8 +71,8 @@ describe('BusThing', function() {
         this.send('d')
       })
     bus.inject('a')
-    bus.log.all()[0].sent['b'].should.exist
-    bus.log.all()[0].sent['c'].should.exist
+    bus.log.all()[0].sent.should.deep.equal(
+      [[ 'b', true ], [ 'c', true ]])
   })
 
   it('change', function() {
@@ -147,7 +150,7 @@ describe('BusThing', function() {
       ]
     })
     bus.log.all()[1].sent.should.deep.equal(
-      { 'ok': true })
+      [[ 'ok', true ]])
   })
 
 
@@ -248,7 +251,8 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start')
-    bus.log.all()[0].sent.hai.should.equal(true)
+    bus.log.all()[0].sent.should.deep.equal(
+     [[ 'hai', true ]] )
   })
 
   it('null should count as message payload', function(done) {
@@ -265,7 +269,8 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start')
-    expect(bus.log.all()[0].sent.hai).to.be.null
+    bus.log.all()[0].sent.should.deep.equal(
+      [[ 'hai', null ]])
   })
 
   it('false should count as message payload ', function(done) {

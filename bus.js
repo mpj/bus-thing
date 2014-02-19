@@ -25,8 +25,13 @@ var createBus = function() {
     wasSent: function(addr, msg) {
       return !!find(logEntries, function(entry) {
         if (!entry.sent) return false
-        if (!msg) return entry.sent.hasOwnProperty(addr)
-        return deepEqual(entry.sent[addr], msg)
+        return !!find(entry.sent, function(envelope) {
+          if (addr !== envelope[0])
+            return false
+          if (msg && !deepEqual(msg, envelope[1]))
+            return false
+          return true
+        })
       })
     }
   }
@@ -86,9 +91,11 @@ var createBus = function() {
 
     // Make a not if this is message differs from the
     // last message sent on the same address before changing it.
-    var wasChanged = !deepEqual(
-      lastMessageMap[address], message)
-      lastMessageMap[address] = message
+    var wasChanged = !deepEqual(lastMessageMap[address], message)
+
+    // Store the injected message as the new last
+    // message on this address.
+    lastMessageMap[address] = message
 
     // TODO: Clearer observer/handler semantics
     var matchingHandlers = handlers.filter(function(handler) {
@@ -127,13 +134,13 @@ var createBus = function() {
       })
       var entry = {
         received: receivedMap,
-        sent: null // Will be filled below by send
+        sent: [] // Will be filled below by send
       }
       logEntries.push(entry)
 
       function send(address, message) {
-        entry.sent = entry.sent || {}
-        entry.sent[address] = me.inject(address, message)[1]
+        entry.sent.push(
+          me.inject(address, message))
       }
 
       var commands = { send: send }
