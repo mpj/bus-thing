@@ -10,7 +10,7 @@ var createBus = function() {
   var me = {}
 
   var handlers = []
-  var messageMap = {}
+  var lastMessageMap = {}
 
   var logEntries = []
 
@@ -73,27 +73,47 @@ var createBus = function() {
 
   me.inject = function(address, message) {
 
+    // It's a common mistake to call .inject on the
+    // main bus instead of this.send, catch that:
     if (isHandler(me.inject.caller))
       throw new Error(
         'Illegal call to inject method from inside handler. ' +
         'Use this.send instead.')
 
-
+    // Translate any undefined message to true,
+    // but not null or other falsy values
     message = isUndefined(message) ? true : message
-    // Note if this is message differs from the last one
-    // sent on the same address before changing it.
-    var wasChanged = !deepEqual(
-      messageMap[address], message)
-      messageMap[address] = message
 
+    // Make a not if this is message differs from the
+    // last message sent on the same address before changing it.
+    var wasChanged = !deepEqual(
+      lastMessageMap[address], message)
+      lastMessageMap[address] = message
+
+    // TODO: Clearer observer/handler semantics
     var matchingHandlers = handlers.filter(function(handler) {
       return !!find(handler.observers, function(observer) {
+
+        if (observer.address !== address)
+          return false;
+
         if (observer.message && !deepEqual(observer.message, message))
           return false;
-        return observer.address === address &&
-               !(observer.type === 'change' && !wasChanged) &&
-               !(observer.type === 'when'   && !message) &&
-               observer.type !== 'peek'
+
+        if(observer.type === 'change' && !wasChanged)
+          return false
+
+        // Observers of type when is only triggered when
+        // sent a truthy message
+        if(observer.type === 'when'   && !message)
+          return false;
+
+        // Peek observers only wants values if
+        // a sibling observer does.
+        if(observer.type === 'peek')
+          return false;
+
+        return true
       })
     })
 
@@ -101,7 +121,7 @@ var createBus = function() {
       var receivedMap = {}
       var receivedArr = []
       pluck(handler.observers, 'address').forEach(function(address) {
-        var message = messageMap[address]
+        var message = lastMessageMap[address]
         receivedMap[address] = message
         receivedArr.push(message)
       })
@@ -113,8 +133,7 @@ var createBus = function() {
 
       function send(address, message) {
         entry.sent = entry.sent || {}
-        entry.sent[address] = isUndefined(message) ? true : message
-        me.inject(address, message)
+        entry.sent[address] = me.inject(address, message)[1]
       }
 
       var commands = { send: send }
@@ -130,6 +149,8 @@ var createBus = function() {
       logEntries.push({
         unhandled: [ address, message ]
       })
+
+    return [address, message]
   }
 
   return me;
