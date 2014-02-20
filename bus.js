@@ -76,14 +76,7 @@ var createBus = function() {
 
   extendWithObserveMethods(me, [])
 
-  me.inject = function(address, message) {
-
-    // It's a common mistake to call .inject on the
-    // main bus instead of this.send, catch that:
-    if (isHandler(me.inject.caller))
-      throw new Error(
-        'Illegal call to inject method from inside handler. ' +
-        'Use this.send instead.')
+  var send = function(address, message) {
 
     // Translate any undefined message to true,
     // but not null or other falsy values
@@ -138,11 +131,11 @@ var createBus = function() {
       }
       logEntries.push(entry)
 
-      function send(address, message) {
-        entry.sent.push(me.inject(address, message))
+      function loggingSend(address, message) {
+        entry.sent.push(send(address, message))
       }
 
-      var commands = { send: send }
+      var commands = { send: loggingSend }
 
       handler.fn.apply(commands, receivedArr)
 
@@ -157,6 +150,23 @@ var createBus = function() {
       })
 
     return [address, message]
+  }
+
+  // Inject a message into the bus from the outside
+  me.inject = function(address, message) {
+    // It's a common mistake to call .inject on the
+    // main bus instead of this.send, catch that:
+    if (isHandler(me.inject.caller))
+      throw new Error(
+        'Illegal call to inject method from inside handler. ' +
+        'Use this.send instead.')
+
+    message = isUndefined(message) ? true : message
+    logEntries.push({
+      injected: [ address, message ]
+    })
+    send(address, message)
+
   }
 
   return me;
