@@ -4,7 +4,7 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// observer type should be in the log
+// TODO: observer type should be in the log
 
 describe('BusThing', function() {
   var bus;
