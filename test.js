@@ -4,9 +4,7 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: make envelopes more consistent.
-// Do arrays of raw envelopes in sent, and create
-// an object with raw, interpreted props
+// TODO: inject should log
 
 describe('BusThing', function() {
   var bus;
@@ -181,7 +179,7 @@ describe('BusThing', function() {
       bus.on('greeting', function(x) {
         // this would never have been executed
       })
-    }).should.throw('Second argument to "on" was a function. Expected message matcher.')
+    }).should.throw('Second argument to "on" was a function. Expected message matcher. You probably meant to use .then()')
   })
 
   it('errors when calling bus.inject from inside transform', function() {
@@ -281,4 +279,17 @@ describe('BusThing', function() {
     bus.inject('generic-message', false)
   })
 
+  it('unhandled should show interpretation', function() {
+    bus.on('a').then(function() { this.send('b') })
+    bus.inject('a')
+    bus.log.all()[1].unhandled.should.deep.equal(
+      [ 'b', true ])
+  })
+
 })
+
+function dbg(bus) {
+  console.log('')
+  console.log('--- DEBUG ---')
+  console.log(JSON.stringify(bus.log.all(), null, 2))
+}

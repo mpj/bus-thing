@@ -40,7 +40,7 @@ var createBus = function() {
     if (isFunction(message))
       throw new Error(
         'Second argument to "' + type + '" was a function. ' +
-        'Expected message matcher.')
+        'Expected message matcher. You probably meant to use .then()')
 
     observers = observers.slice(0)
     observers.push({
@@ -139,8 +139,7 @@ var createBus = function() {
       logEntries.push(entry)
 
       function send(address, message) {
-        entry.sent.push(
-          me.inject(address, message))
+        entry.sent.push(me.inject(address, message))
       }
 
       var commands = { send: send }
