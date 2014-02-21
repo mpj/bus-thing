@@ -118,15 +118,15 @@ var createBus = function() {
     })
 
     matchingHandlers.forEach(function(handler) {
-      var receivedMap = {}
-      var receivedArr = []
+      var receivedEnvelopes = []
+      var receivedMessages = []
       pluck(handler.observers, 'address').forEach(function(address) {
         var message = lastMessageMap[address]
-        receivedMap[address] = message
-        receivedArr.push(message)
+        receivedEnvelopes.push([ address, message ])
+        receivedMessages.push(message)
       })
       var entry = {
-        received: receivedMap,
+        received: receivedEnvelopes,
         sent: [] // Will be filled below by send
       }
       logEntries.push(entry)
@@ -137,7 +137,7 @@ var createBus = function() {
 
       var commands = { send: loggingSend }
 
-      handler.fn.apply(commands, receivedArr)
+      handler.fn.apply(commands, receivedMessages)
 
       handler.observers.forEach(function(observer) {
         if (observer.type === 'next')

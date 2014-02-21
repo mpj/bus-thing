@@ -22,7 +22,7 @@ describe('BusThing', function() {
       injected: [ 'greeting', 'hello!' ]
     })
     bus.log.all()[1].should.deep.equal({
-      received: { 'greeting': 'hello!' },
+      received: [[ 'greeting', 'hello!' ]],
       sent: []
     })
   })
@@ -33,7 +33,7 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hai world')
     bus.log.all()[1].should.deep.equal({
-      received: { 'greeting': 'hai world' },
+      received: [[ 'greeting', 'hai world' ]],
       sent: [[ 'render', 'hai world' ]]
     })
     bus.log.all()[2].should.deep.equal({
