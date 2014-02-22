@@ -5,6 +5,8 @@ var expect = chai.expect
 chai.should()
 
 // TODO: observer type should be in the log
+// TODO: Warn if on never had a then
+// TODO: better semantics around observers/handlers. Pipe?
 
 describe('BusThing', function() {
   var bus;
@@ -19,11 +21,11 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
-      injected: [ 'greeting', 'hello!' ]
+      injected: true,
+      delivered: [ 'greeting', 'hello!' ]
     })
     bus.log.all()[1].should.deep.equal({
-      received: [[ 'greeting', 'hello!' ]],
-      sent: []
+      received: [[ 'greeting', 'hello!' ]]
     })
   })
 
@@ -34,11 +36,9 @@ describe('BusThing', function() {
     bus.inject('greeting', 'hai world')
     bus.log.all()[1].should.deep.equal({
       received: [[ 'greeting', 'hai world' ]],
-      sent: [[ 'render', 'hai world' ]]
+      undelivered: [[ 'render', 'hai world' ]]
     })
-    bus.log.all()[2].should.deep.equal({
-      unhandled: [ 'render', 'hai world' ]
-    })
+    bus.log.all().length.should.equal(2)
 
   })
 
@@ -72,8 +72,10 @@ describe('BusThing', function() {
         this.send('d')
       })
     bus.inject('a')
-    bus.log.all()[1].sent.should.deep.equal(
-      [[ 'b', true ], [ 'c', true ]])
+    bus.log.all()[1].undelivered.should.deep.equal(
+      [[ 'c', true ]])
+    bus.log.all()[2].undelivered.should.deep.equal(
+      [[ 'd', true ]])
   })
 
   it('change', function() {
@@ -138,8 +140,9 @@ describe('BusThing', function() {
         { prop: 2 } // <- different
       ]
     })
-    bus.log.all()[1].should.deep.equal({
-      unhandled: [ 'picky-handler', {
+    bus.log.all()[0].should.deep.equal({
+      injected: true,
+      undelivered: [ 'picky-handler', {
         arr: [
           { prop: 2 } // <- different
         ]
@@ -150,7 +153,7 @@ describe('BusThing', function() {
         { prop: 1 } // <- correct
       ]
     })
-    bus.log.all()[3].sent.should.deep.equal(
+    bus.log.all()[2].undelivered.should.deep.equal(
       [[ 'ok', true ]])
   })
 
@@ -208,8 +211,8 @@ describe('BusThing', function() {
   it('then accepts pure envelopes', function() {
     bus.on('cook').then('oven-on', true)
     bus.inject('cook')
-    bus.log.all()[2].unhandled.should.deep.equal(
-      [ 'oven-on', true ])
+    bus.log.all()[1].undelivered.should.deep.equal(
+      [[ 'oven-on', true ]])
   })
 
   it('wasSent (true)', function() {
@@ -252,9 +255,9 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start')
-    bus.log.all()[0].injected.should.deep.equal(
+    bus.log.all()[0].delivered.should.deep.equal(
       [ 'start', true ])
-    bus.log.all()[1].sent.should.deep.equal(
+    bus.log.all()[1].undelivered.should.deep.equal(
      [[ 'hai', true ]] )
   })
 
@@ -272,9 +275,9 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start', null)
-    bus.log.all()[0].injected.should.deep.equal(
+    bus.log.all()[0].delivered.should.deep.equal(
       [ 'start', null ])
-    bus.log.all()[1].sent.should.deep.equal(
+    bus.log.all()[1].undelivered.should.deep.equal(
       [[ 'hai', null ]])
   })
 
@@ -289,8 +292,8 @@ describe('BusThing', function() {
   it('unhandled should show interpretation', function() {
     bus.on('a').then(function() { this.send('b') })
     bus.inject('a')
-    bus.log.all()[2].unhandled.should.deep.equal(
-      [ 'b', true ])
+    bus.log.all()[1].undelivered.should.deep.equal(
+      [[ 'b', true ]])
   })
 
 })

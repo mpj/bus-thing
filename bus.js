@@ -5,6 +5,15 @@ var partial = require('mout/function/partial')
 var deepEqual = require('deep-equal')
 var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
+var isArguments = require('is-arguments')
+
+var interpret = function() {
+  var args = isArguments(arguments[0]) ? arguments[0] : arguments
+  var arr = isArray(args[0]) ? args[0] : [ args[0], args[1] ]
+  if (isUndefined(arr[1]))
+    arr[1] = true
+  return arr
+}
 
 var createBus = function() {
   var me = {}
@@ -24,8 +33,8 @@ var createBus = function() {
     all: function() { return logEntries },
     wasSent: function(addr, msg) {
       return !!find(logEntries, function(entry) {
-        if (!entry.sent) return false
-        return !!find(entry.sent, function(envelope) {
+        var sentEnvelopes = (entry.undelivered || []).concat(entry.delivered || [])
+        return !!find(sentEnvelopes, function(envelope) {
           if (addr !== envelope[0])
             return false
           if (msg && !deepEqual(msg, envelope[1]))
@@ -126,13 +135,20 @@ var createBus = function() {
         receivedMessages.push(message)
       })
       var entry = {
-        received: receivedEnvelopes,
-        sent: [] // Will be filled below by send
+        received: receivedEnvelopes
       }
       logEntries.push(entry)
 
-      function loggingSend(address, message) {
-        entry.sent.push(send(address, message))
+      function loggingSend() {
+        var envelope = interpret(arguments)
+        if (send.apply(null, envelope)) {
+          entry.delivered = entry.delivered || []
+          entry.delivered.push(envelope)
+        } else {
+          entry.undelivered = entry.undelivered || []
+          entry.undelivered.push(envelope)
+        }
+
       }
 
       var commands = { send: loggingSend }
@@ -144,16 +160,13 @@ var createBus = function() {
           observer.type = 'peek'
       })
     })
-    if (matchingHandlers.length === 0)
-      logEntries.push({
-        unhandled: [ address, message ]
-      })
 
-    return [address, message]
+    return matchingHandlers.length > 0
   }
 
   // Inject a message into the bus from the outside
-  me.inject = function(address, message) {
+  me.inject = function() {
+    var envelope = interpret(arguments)
     // It's a common mistake to call .inject on the
     // main bus instead of this.send, catch that:
     if (isHandler(me.inject.caller))
@@ -161,11 +174,10 @@ var createBus = function() {
         'Illegal call to inject method from inside handler. ' +
         'Use this.send instead.')
 
-    message = isUndefined(message) ? true : message
-    logEntries.push({
-      injected: [ address, message ]
-    })
-    send(address, message)
+    var logEntry = { injected: true }
+    logEntries.push(logEntry)
+    logEntry[send.apply(null, envelope) ? 'delivered' : 'undelivered'] = envelope
+
 
   }
 
