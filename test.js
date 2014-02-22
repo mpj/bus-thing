@@ -5,7 +5,7 @@ var expect = chai.expect
 chai.should()
 
 // TODO: observer type should be in the log
-// TODO: Warn if on never had a then
+// TODO: Warn if on never had a worker
 // TODO: better semantics around observers/handlers. Pipe?
 
 describe('BusThing', function() {
@@ -15,7 +15,7 @@ describe('BusThing', function() {
   })
 
   it('basic case', function(done) {
-    bus.on('greeting').then(function(x) {
+    bus.on('greeting').worker(function(x) {
       assert(x, 'hello!')
       done()
     })
@@ -30,7 +30,7 @@ describe('BusThing', function() {
   })
 
   it('sends response', function() {
-    bus.on('greeting').then(function(x) {
+    bus.on('greeting').worker(function(x) {
       this.send('render', x)
     })
     bus.inject('greeting', 'hai world')
@@ -47,7 +47,7 @@ describe('BusThing', function() {
     bus
       .on('addressA')
       .on('addressB')
-      .then(function(a, b) {
+      .worker(function(a, b) {
         sent.push({ a: a, b: b })
       })
     bus.inject('addressA', 'messageA')
@@ -64,11 +64,11 @@ describe('BusThing', function() {
 
   it('dual messages should be logged on first entry', function() {
     bus
-      .on('a').then(function() {
+      .on('a').worker(function() {
         this.send('b', true)
         this.send('c', true)
       })
-      .on('b').then(function() {
+      .on('b').worker(function() {
         this.send('d')
       })
     bus.inject('a')
@@ -83,7 +83,7 @@ describe('BusThing', function() {
     bus
       .change('addressA')
       .on('addressB')
-      .then(function(a, b) {
+      .worker(function(a, b) {
         sent.push({a:a,b:b})
       })
 
@@ -107,7 +107,7 @@ describe('BusThing', function() {
     var noDeliveries = 0
     bus
       .change('buy')
-      .then(function() {
+      .worker(function() {
         noDeliveries++
       })
 
@@ -132,7 +132,7 @@ describe('BusThing', function() {
       arr: [
         { prop: 1 }
       ]
-    }).then(function() {
+    }).worker(function() {
       this.send('ok', true)
     })
     bus.inject('picky-handler', {
@@ -162,7 +162,7 @@ describe('BusThing', function() {
     var greetings = []
     bus
       .next('greeting')
-      .then(function(x) {greetings.push(x) })
+      .worker(function(x) {greetings.push(x) })
     bus.inject('greeting', 'hello')
     bus.inject('greeting', 'hi') // <- should be ignored
     greetings.should.deep.equal([ 'hello' ])
@@ -172,7 +172,7 @@ describe('BusThing', function() {
     var sent = []
     bus
       .when('isReady')
-      .then(function(ready) { sent.push(ready) })
+      .worker(function(ready) { sent.push(ready) })
     bus.inject('isReady', false)
     bus.inject('isReady', true)
     bus.inject('isReady', true)
@@ -185,13 +185,13 @@ describe('BusThing', function() {
       bus.on('greeting', function(x) {
         // this would never have been executed
       })
-    }).should.throw('Second argument to "on" was a function. Expected message matcher. You probably meant to use .then()')
+    }).should.throw('Second argument to "on" was a function. Expected message matcher. You probably meant to use .worker()')
   })
 
   it('errors when calling bus.inject from inside transform', function() {
     (function() {
       bus
-        .on('greeting').then(function(x) {
+        .on('greeting').worker(function(x) {
           bus.inject('hej')
         })
         .inject('greeting')
@@ -208,15 +208,15 @@ describe('BusThing', function() {
     }).should.throw('Second argument to "change" was a function. Expected message matcher.')
   })
 
-  it('then accepts pure envelopes', function() {
-    bus.on('cook').then('oven-on', true)
+  it('worker accepts pure envelopes', function() {
+    bus.on('cook').worker('oven-on', true)
     bus.inject('cook')
     bus.log.all()[1].undelivered.should.deep.equal(
       [[ 'oven-on', true ]])
   })
 
   it('wasSent (true)', function() {
-    bus.on('init').then(function() {
+    bus.on('init').worker(function() {
       this.send('greeting', { txt: ['hi!'] } )
     })
     bus.log.wasSent('greeting', { txt: ['hi!'] }).should.be.false
@@ -225,7 +225,7 @@ describe('BusThing', function() {
   })
 
   it('wasSent (false)', function() {
-    bus.on('init').then(function() {
+    bus.on('init').worker(function() {
       this.send('greeting', { txt: ['hello!'] })
     })
     bus.inject('init')
@@ -233,7 +233,7 @@ describe('BusThing', function() {
   })
 
   it('wasSent (only address)', function() {
-    bus.on('init').then(function() {
+    bus.on('init').worker(function() {
       this.send('greeting', 'irrelephant')
     })
     bus.log.wasSent('greeting').should.be.false
@@ -242,7 +242,7 @@ describe('BusThing', function() {
   })
 
   it('undefined message should be implicit true (callback)', function(done) {
-    bus.on('generic-message').then(function(msg) {
+    bus.on('generic-message').worker(function(msg) {
       msg.should.be.true
       done()
     })
@@ -250,7 +250,7 @@ describe('BusThing', function() {
   })
 
   it('undefined message should be implicit true (log)', function(done) {
-    bus.on('start').then(function(msg) {
+    bus.on('start').worker(function(msg) {
       this.send('hai')
       done()
     })
@@ -262,7 +262,7 @@ describe('BusThing', function() {
   })
 
   it('null should count as message payload', function(done) {
-    bus.on('generic-message').then(function(msg) {
+    bus.on('generic-message').worker(function(msg) {
       expect(msg).to.be.null
       done()
     })
@@ -270,7 +270,7 @@ describe('BusThing', function() {
   })
 
   it('null should count as message payload (log)', function(done) {
-    bus.on('start').then(function(msg) {
+    bus.on('start').worker(function(msg) {
       this.send('hai', null)
       done()
     })
@@ -282,7 +282,7 @@ describe('BusThing', function() {
   })
 
   it('false should count as message payload ', function(done) {
-    bus.on('generic-message').then(function(msg) {
+    bus.on('generic-message').worker(function(msg) {
       expect(msg).to.be.false
       done()
     })
@@ -290,7 +290,7 @@ describe('BusThing', function() {
   })
 
   it('unhandled should show interpretation', function() {
-    bus.on('a').then(function() { this.send('b') })
+    bus.on('a').worker(function() { this.send('b') })
     bus.inject('a')
     bus.log.all()[1].undelivered.should.deep.equal(
       [[ 'b', true ]])

@@ -7,6 +7,8 @@ var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
 
+// TODO: Use interpret in more places
+
 var interpret = function() {
   var args = isArguments(arguments[0]) ? arguments[0] : arguments
   var arr = isArray(args[0]) ? args[0] : [ args[0], args[1] ]
@@ -18,14 +20,14 @@ var interpret = function() {
 var createBus = function() {
   var me = {}
 
-  var handlers = []
+  var observers = []
   var lastMessageMap = {}
 
   var logEntries = []
 
-  function isHandler(fn) {
-    return !!find(handlers, function(handler) {
-      return handler.fn === fn
+  function isWorker(func) {
+    return !!find(observers, function(observer) {
+      return observer.worker === func
     })
   }
 
@@ -45,45 +47,45 @@ var createBus = function() {
     }
   }
 
-  var obs = function(type, observers, address, message) {
+  var addTrigger = function(type, triggers, address, message) {
     if (isFunction(message))
       throw new Error(
         'Second argument to "' + type + '" was a function. ' +
-        'Expected message matcher. You probably meant to use .then()')
+        'Expected message matcher. You probably meant to use .worker()')
 
-    observers = observers.slice(0)
-    observers.push({
+    triggers = triggers.slice(0)
+    triggers.push({
       address: address,
       message: message,
       type: type,
     })
     var cmd = {
-      then: function(fnOrAddress, message) {
-        var fn = isFunction(fnOrAddress) ? fnOrAddress :
-          function() { this.send(fnOrAddress, message) }
-        handlers.push({
-          fn: fn,
-          observers: observers
+      worker: function(fnOrAddress, message) {
+        observers.push({
+          worker: isFunction(fnOrAddress) ?
+                    fnOrAddress :
+                    function() { this.send(fnOrAddress, message) },
+          triggers: triggers
         })
         return me
       }
     }
-    extendWithObserveMethods(cmd, observers)
+    extendWithAddTriggerMethods(cmd, triggers)
     return cmd
   }
 
-  var extendWithObserveMethods = function(target, observers) {
+  var extendWithAddTriggerMethods = function(target, triggers) {
     [ 'on',
       'change',
       'next',
       'when'
     ].forEach(function(type) {
-      target[type] = partial(obs, type, observers)
+      target[type] = partial(addTrigger, type, triggers)
     })
 
   }
 
-  extendWithObserveMethods(me, [])
+  extendWithAddTriggerMethods(me, [])
 
   var send = function(address, message) {
 
@@ -99,37 +101,36 @@ var createBus = function() {
     // message on this address.
     lastMessageMap[address] = message
 
-    // TODO: Clearer observer/handler semantics
-    var matchingHandlers = handlers.filter(function(handler) {
-      return !!find(handler.observers, function(observer) {
+    var matchingObservers = observers.filter(function(handler) {
+      return !!find(handler.triggers, function(trigger) {
 
-        if (observer.address !== address)
+        if (trigger.address !== address)
           return false;
 
-        if (observer.message && !deepEqual(observer.message, message))
+        if (trigger.message && !deepEqual(trigger.message, message))
           return false;
 
-        if(observer.type === 'change' && !wasChanged)
+        if(trigger.type === 'change' && !wasChanged)
           return false
 
         // Observers of type when is only triggered when
         // sent a truthy message
-        if(observer.type === 'when'   && !message)
+        if(trigger.type === 'when'   && !message)
           return false;
 
-        // Peek observers only wants values if
-        // a sibling observer does.
-        if(observer.type === 'peek')
+        // Peek triggers only wants values if
+        // a sibling trigger does.
+        if(trigger.type === 'peek')
           return false;
 
         return true
       })
     })
 
-    matchingHandlers.forEach(function(handler) {
+    matchingObservers.forEach(function(handler) {
       var receivedEnvelopes = []
       var receivedMessages = []
-      pluck(handler.observers, 'address').forEach(function(address) {
+      pluck(handler.triggers, 'address').forEach(function(address) {
         var message = lastMessageMap[address]
         receivedEnvelopes.push([ address, message ])
         receivedMessages.push(message)
@@ -148,20 +149,17 @@ var createBus = function() {
           entry.undelivered = entry.undelivered || []
           entry.undelivered.push(envelope)
         }
-
       }
 
       var commands = { send: loggingSend }
-
-      handler.fn.apply(commands, receivedMessages)
-
-      handler.observers.forEach(function(observer) {
-        if (observer.type === 'next')
-          observer.type = 'peek'
+      handler.worker.apply(commands, receivedMessages)
+      handler.triggers.forEach(function(trigger) {
+        if (trigger.type === 'next')
+          trigger.type = 'peek'
       })
     })
 
-    return matchingHandlers.length > 0
+    return matchingObservers.length > 0
   }
 
   // Inject a message into the bus from the outside
@@ -169,7 +167,7 @@ var createBus = function() {
     var envelope = interpret(arguments)
     // It's a common mistake to call .inject on the
     // main bus instead of this.send, catch that:
-    if (isHandler(me.inject.caller))
+    if (isWorker(me.inject.caller))
       throw new Error(
         'Illegal call to inject method from inside handler. ' +
         'Use this.send instead.')
