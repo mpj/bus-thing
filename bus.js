@@ -51,7 +51,7 @@ var createBus = function() {
     if (isFunction(message))
       throw new Error(
         'Second argument to "' + type + '" was a function. ' +
-        'Expected message matcher. You probably meant to use .worker()')
+        'Expected message matcher. You probably meant to use .then()')
 
     triggers = triggers.slice(0)
     triggers.push({
@@ -60,7 +60,7 @@ var createBus = function() {
       type: type,
     })
     var cmd = {
-      worker: function(fnOrAddress, message) {
+      then: function(fnOrAddress, message) {
         observers.push({
           worker: isFunction(fnOrAddress) ?
                     fnOrAddress :
