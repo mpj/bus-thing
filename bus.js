@@ -7,6 +7,14 @@ var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
 
+function envelopeFrom(args) {
+  // TODO: Verify message format
+  return {
+    address: args[0],
+    message: isUndefined(args[1]) ? true : args[1]
+  }
+}
+
 var createBus = function() {
   var me = {}
 
@@ -71,32 +79,27 @@ var createBus = function() {
     ].forEach(function(type) {
       target[type] = partial(addTrigger, type, triggers)
     })
-
   }
 
   extendWithAddTriggerMethods(me, [])
 
-  var send = function(address, message) {
-
-    // Translate any undefined message to true,
-    // but not null or other falsy values
-    message = isUndefined(message) ? true : message
+  var send = function(sent) {
 
     // Make a not if this is message differs from the
     // last message sent on the same address before changing it.
-    var wasChanged = !deepEqual(lastMessageMap[address], message)
+    var wasChanged = !deepEqual(lastMessageMap[sent.address], sent.message)
 
     // Store the injected message as the new last
     // message on this address.
-    lastMessageMap[address] = message
+    lastMessageMap[sent.address] = sent.message
 
     var matchingObservers = observers.filter(function(handler) {
       return !!find(handler.triggers, function(trigger) {
 
-        if (trigger.address !== address)
+        if (trigger.address !== sent.address)
           return false;
 
-        if (trigger.message && !deepEqual(trigger.message, message))
+        if (trigger.message && !deepEqual(trigger.message, sent.message))
           return false;
 
         if(trigger.type === 'change' && !wasChanged)
@@ -104,7 +107,7 @@ var createBus = function() {
 
         // Observers of type when is only triggered when
         // sent a truthy message
-        if(trigger.type === 'when'   && !message)
+        if(trigger.type === 'when'   && !sent.message)
           return false;
 
         // Peek triggers only wants values if
@@ -134,13 +137,11 @@ var createBus = function() {
       }
       logEntries.push(entry)
 
-      function loggingSend(address, message) {
+      function loggingSend() {
+        var envelope = envelopeFrom(arguments)
         entry.sent.push({
-          envelope: {
-            address: address,
-            message: isUndefined(message) ? true : message
-          },
-          couldDeliver: send(address, message)
+          envelope: envelope,
+          couldDeliver: send(envelope)
         })
       }
 
@@ -158,9 +159,8 @@ var createBus = function() {
   }
 
   // Inject a message into the bus from the outside
-  me.inject = function(address, message) {
-
-    message = isUndefined(message) ? true : message
+  me.inject = function() {
+    var envelope = envelopeFrom(arguments)
 
     // It's a common mistake to call .inject on the
     // main bus instead of this.send, catch that:
@@ -173,11 +173,8 @@ var createBus = function() {
     logEntries.push(logEntry)
 
     logEntry.sent.push({
-      envelope: {
-        address: address,
-        message: message
-      },
-      couldDeliver: send(address, message)
+      envelope: envelope,
+      couldDeliver: send(envelope)
     })
 
   }
