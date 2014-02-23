@@ -18,10 +18,9 @@ function envelopeFrom(args) {
 var createBus = function() {
   var me = {}
 
-  var observers = []
+  var observers      = []
   var lastMessageMap = {}
-
-  var logEntries = []
+  var logEntries     = []
 
   function isWorker(func) {
     return !!find(observers, function(observer) {
@@ -131,15 +130,18 @@ var createBus = function() {
         }
       })
 
-      var entry = {
+      var logEntry = {
         received: receivedDeliveries,
+        sender: {
+          name: handler.worker.name === '' ? null : handler.worker.name
+        },
         sent: []
       }
-      logEntries.push(entry)
+      logEntries.push(logEntry)
 
       function loggingSend() {
         var envelope = envelopeFrom(arguments)
-        entry.sent.push({
+        logEntry.sent.push({
           envelope: envelope,
           couldDeliver: send(envelope)
         })
@@ -169,7 +171,12 @@ var createBus = function() {
         'Illegal call to inject method from inside handler. ' +
         'Use this.send instead.')
 
-    var logEntry = { injected: true, sent: [] }
+    var logEntry = {
+      sender: {
+        name: 'injector'
+      },
+      sent: []
+    }
     logEntries.push(logEntry)
 
     logEntry.sent.push({

@@ -4,7 +4,8 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: trigger type should be in the log
+// TODO: Pure log functionality - will never be passed to worker,
+// used mainly to support expect failures and Ok
 // TODO: Warn if on never had a then
 
 // IDEA: Not liking how the injector entries behave now,
@@ -23,7 +24,9 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
-      injected: true,
+      sender: {
+        name: 'injector'
+      },
       sent: [
         {
           envelope: {
@@ -42,6 +45,9 @@ describe('BusThing', function() {
         },
         trigger: 'on'
       }],
+      sender: {
+        name: null
+      },
       sent: []
     })
   })
@@ -61,6 +67,9 @@ describe('BusThing', function() {
           trigger: 'on'
         }
       ],
+      sender: {
+        name: null
+      },
       sent: [
         {
           envelope: {
@@ -186,7 +195,9 @@ describe('BusThing', function() {
       ]
     })
     bus.log.all()[0].should.deep.equal({
-      injected: true,
+      sender: {
+        name: 'injector'
+      },
       sent: [
         {
           envelope: {
@@ -387,6 +398,14 @@ describe('BusThing', function() {
         message: true
       }
     }])
+  })
+
+  it('logs function name as worker', function() {
+    bus.on('start').then(function startHandler() {
+      this.send('bam!')
+    })
+    bus.inject('start')
+    bus.log.all()[1].sender.name.should.equal('startHandler')
   })
 })
 
