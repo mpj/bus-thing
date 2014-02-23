@@ -35,11 +35,10 @@ var createBus = function() {
     all: function() { return logEntries },
     wasSent: function(addr, msg) {
       return !!find(logEntries, function(entry) {
-        var sentEnvelopes = (entry.undelivered || []).concat(entry.delivered || [])
-        return !!find(sentEnvelopes, function(envelope) {
-          if (addr !== envelope[0])
+        return !!find(entry.sent, function(delivery) {
+          if (addr !== delivery.envelope[0])
             return false
-          if (msg && !deepEqual(msg, envelope[1]))
+          if (msg && !deepEqual(msg, delivery.envelope[1]))
             return false
           return true
         })
@@ -128,31 +127,33 @@ var createBus = function() {
     })
 
     matchingObservers.forEach(function(handler) {
-      var receivedEnvelopes = []
-      var receivedMessages = []
-      pluck(handler.triggers, 'address').forEach(function(address) {
-        var message = lastMessageMap[address]
-        receivedEnvelopes.push([ address, message ])
-        receivedMessages.push(message)
+
+      var receivedDeliveries = handler.triggers.map(function(trigger) {
+        var message = lastMessageMap[trigger.address]
+        return {
+          envelope: [ trigger.address, message ],
+          trigger: trigger.type
+        }
       })
+
       var entry = {
-        received: receivedEnvelopes
+        received: receivedDeliveries,
+        sent: []
       }
       logEntries.push(entry)
 
       function loggingSend() {
         var envelope = interpret(arguments)
-        if (send.apply(null, envelope)) {
-          entry.delivered = entry.delivered || []
-          entry.delivered.push(envelope)
-        } else {
-          entry.undelivered = entry.undelivered || []
-          entry.undelivered.push(envelope)
-        }
+        entry.sent.push({
+          envelope: envelope,
+          couldDeliver: send.apply(null, envelope)
+        })
       }
 
       var commands = { send: loggingSend }
-      handler.worker.apply(commands, receivedMessages)
+      handler.worker.apply(commands, receivedDeliveries.map(function(delivery) {
+        return delivery.envelope[1]
+      }))
       handler.triggers.forEach(function(trigger) {
         if (trigger.type === 'next')
           trigger.type = 'peek'
@@ -172,12 +173,13 @@ var createBus = function() {
         'Illegal call to inject method from inside handler. ' +
         'Use this.send instead.')
 
-    var logEntry = { injected: true }
+    var logEntry = { injected: true, sent: [] }
     logEntries.push(logEntry)
-    logEntry[send.apply(null, envelope) ? 'delivered' : 'undelivered'] = [ envelope ]
-    // Note: Even though injects are always one envelope, set as an array of one
-    // to make log format consistent.
 
+    logEntry.sent.push({
+      envelope: envelope,
+      couldDeliver: send.apply(null, envelope)
+    })
 
   }
 

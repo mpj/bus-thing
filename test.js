@@ -24,10 +24,19 @@ describe('BusThing', function() {
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
       injected: true,
-      delivered: [[ 'greeting', 'hello!' ]]
+      sent: [
+        {
+          envelope: [ 'greeting', 'hello!' ],
+          couldDeliver: true
+        }
+      ]
     })
     bus.log.all()[1].should.deep.equal({
-      received: [[ 'greeting', 'hello!' ]]
+      received: [{
+        envelope: [ 'greeting', 'hello!' ],
+        trigger: 'on'
+      }],
+      sent: []
     })
   })
 
@@ -37,8 +46,18 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hai world')
     bus.log.all()[1].should.deep.equal({
-      received: [[ 'greeting', 'hai world' ]],
-      undelivered: [[ 'render', 'hai world' ]]
+      received: [
+        {
+          envelope: [ 'greeting', 'hai world' ],
+          trigger: 'on'
+        }
+      ],
+      sent: [
+        {
+          envelope: [ 'render', 'hai world' ],
+          couldDeliver: false
+        }
+      ]
     })
     bus.log.all().length.should.equal(2)
 
@@ -74,10 +93,16 @@ describe('BusThing', function() {
         this.send('d')
       })
     bus.inject('a')
-    bus.log.all()[1].undelivered.should.deep.equal(
-      [[ 'c', true ]])
-    bus.log.all()[2].undelivered.should.deep.equal(
-      [[ 'd', true ]])
+    bus.log.all()[1].sent.should.deep.equal([
+      {
+        envelope: [ 'b', true ],
+        couldDeliver: true
+      },
+      {
+        envelope: [ 'c', true ],
+        couldDeliver: false
+      }
+    ])
   })
 
   it('change', function() {
@@ -144,19 +169,31 @@ describe('BusThing', function() {
     })
     bus.log.all()[0].should.deep.equal({
       injected: true,
-      undelivered: [[ 'picky-handler', {
-        arr: [
-          { prop: 2 } // <- different
-        ]
-      }]]
+      sent: [
+        {
+          envelope: [
+            'picky-handler',
+            {
+              arr: [
+                { prop: 2 } // <- different
+              ]
+            }
+          ],
+          couldDeliver: false
+        }
+      ]
     })
     bus.inject('picky-handler', {
       arr: [
         { prop: 1 } // <- correct
       ]
     })
-    bus.log.all()[2].undelivered.should.deep.equal(
-      [[ 'ok', true ]])
+    bus.log.all()[2].sent.should.deep.equal([
+      {
+        envelope: [ 'ok', true ],
+        couldDeliver: false
+      }
+    ])
   })
 
 
@@ -213,8 +250,10 @@ describe('BusThing', function() {
   it('then accepts pure envelopes', function() {
     bus.on('cook').then('oven-on', true)
     bus.inject('cook')
-    bus.log.all()[1].undelivered.should.deep.equal(
-      [[ 'oven-on', true ]])
+    bus.log.all()[1].sent.should.deep.equal([{
+      envelope: [ 'oven-on', true ],
+      couldDeliver: false
+    }])
   })
 
   it('wasSent (true)', function() {
@@ -257,10 +296,15 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start')
-    bus.log.all()[0].delivered.should.deep.equal(
-      [[ 'start', true ]])
-    bus.log.all()[1].undelivered.should.deep.equal(
-     [[ 'hai', true ]] )
+    bus.log.all()[0].sent.should.deep.equal([{
+      envelope: [ 'start', true ],
+      couldDeliver: true
+    }])
+    bus.log.all()[1].sent.should.deep.equal([{
+      envelope: [ 'hai', true ],
+      couldDeliver: false
+    }])
+
   })
 
   it('null should count as message payload', function(done) {
@@ -277,10 +321,16 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start', null)
-    bus.log.all()[0].delivered.should.deep.equal(
-      [[ 'start', null ]])
-    bus.log.all()[1].undelivered.should.deep.equal(
-      [[ 'hai', null ]])
+    bus.log.all()[0].sent.should.deep.equal([{
+      envelope: [ 'start', null ],
+      couldDeliver: true
+    }])
+
+    bus.log.all()[1].sent.should.deep.equal([{
+      envelope: [ 'hai', null ],
+      couldDeliver: false
+    }])
+
   })
 
   it('false should count as message payload ', function(done) {
@@ -294,10 +344,11 @@ describe('BusThing', function() {
   it('unhandled should show interpretation', function() {
     bus.on('a').then(function() { this.send('b') })
     bus.inject('a')
-    bus.log.all()[1].undelivered.should.deep.equal(
-      [[ 'b', true ]])
+    bus.log.all()[1].sent.should.deep.equal([{
+      couldDeliver: false,
+      envelope: [ 'b', true ]
+    }])
   })
-
 })
 
 function dbg(bus) {
