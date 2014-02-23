@@ -174,7 +174,9 @@ var createBus = function() {
 
     var logEntry = { injected: true }
     logEntries.push(logEntry)
-    logEntry[send.apply(null, envelope) ? 'delivered' : 'undelivered'] = envelope
+    logEntry[send.apply(null, envelope) ? 'delivered' : 'undelivered'] = [ envelope ]
+    // Note: Even though injects are always one envelope, set as an array of one
+    // to make log format consistent.
 
 
   }

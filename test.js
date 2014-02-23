@@ -4,9 +4,11 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: observer type should be in the log
+// TODO: trigger type should be in the log
 // TODO: Warn if on never had a then
-// TODO: better semantics around observers/handlers. Pipe?
+
+// IDEA: Not liking how the injector entries behave now,
+// but note sure how to make them better.
 
 describe('BusThing', function() {
   var bus;
@@ -22,7 +24,7 @@ describe('BusThing', function() {
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
       injected: true,
-      delivered: [ 'greeting', 'hello!' ]
+      delivered: [[ 'greeting', 'hello!' ]]
     })
     bus.log.all()[1].should.deep.equal({
       received: [[ 'greeting', 'hello!' ]]
@@ -142,11 +144,11 @@ describe('BusThing', function() {
     })
     bus.log.all()[0].should.deep.equal({
       injected: true,
-      undelivered: [ 'picky-handler', {
+      undelivered: [[ 'picky-handler', {
         arr: [
           { prop: 2 } // <- different
         ]
-      }]
+      }]]
     })
     bus.inject('picky-handler', {
       arr: [
@@ -256,7 +258,7 @@ describe('BusThing', function() {
     })
     bus.inject('start')
     bus.log.all()[0].delivered.should.deep.equal(
-      [ 'start', true ])
+      [[ 'start', true ]])
     bus.log.all()[1].undelivered.should.deep.equal(
      [[ 'hai', true ]] )
   })
@@ -276,7 +278,7 @@ describe('BusThing', function() {
     })
     bus.inject('start', null)
     bus.log.all()[0].delivered.should.deep.equal(
-      [ 'start', null ])
+      [[ 'start', null ]])
     bus.log.all()[1].undelivered.should.deep.equal(
       [[ 'hai', null ]])
   })
