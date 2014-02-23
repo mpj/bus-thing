@@ -144,10 +144,10 @@ describe('BusThing', function() {
       })
 
     bus.inject('addressA', 'messageA1')
-    bus.inject('addressA', 'messageA1') // Same, should be ignored
-    bus.inject('addressB', 'messageB1')
-    bus.inject('addressB', 'messageB1')
-    bus.inject('addressA', 'messageA2') // Is changed, should trigger
+    .inject('addressA', 'messageA1') // Same, should be ignored
+    .inject('addressB', 'messageB1')
+    .inject('addressB', 'messageB1')
+    .inject('addressA', 'messageA2') // Is changed, should trigger
 
     sent[1].should.deep.equal({
       'a': 'messageA1',

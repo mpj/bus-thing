@@ -196,6 +196,8 @@ var createBus = function() {
       couldDeliver: send(envelope)
     })
 
+    return me
+
   }
 
   return me;
