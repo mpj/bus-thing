@@ -147,7 +147,19 @@ var createBus = function() {
         })
       }
 
-      var commands = { send: loggingSend }
+      function logOnly() {
+        logEntry.sent.push({
+          envelope: envelopeFrom(arguments),
+          couldDeliver: false,
+          logOnly: true
+        })
+      }
+
+      var commands = {
+        send: loggingSend,
+        log: logOnly
+      }
+
       handler.worker.apply(commands, receivedDeliveries.map(function(delivery) {
         return delivery.envelope.message
       }))

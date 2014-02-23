@@ -8,8 +8,10 @@ chai.should()
 // used mainly to support expect failures and Ok
 // TODO: Warn if on never had a then
 
-// IDEA: Not liking how the injector entries behave now,
-// but note sure how to make them better.
+
+// TODO: Circular references. See
+// http://knockoutjs.com/documentation/computedObservables.html
+
 
 describe('BusThing', function() {
   var bus;
@@ -406,6 +408,26 @@ describe('BusThing', function() {
     })
     bus.inject('start')
     bus.log.all()[1].sender.name.should.equal('startHandler')
+  })
+
+  it('using logging does NOT trigger handlers', function(){
+    var triggers = 0
+    bus.on('a').then(function() {
+      triggers++
+      this.log('a')
+    })
+    bus.inject('a', true)
+
+    triggers.should.equal(1)
+
+    bus.log.all()[1].sent[0].should.deep.equal({
+      envelope: {
+        address: 'a',
+        message: true
+      },
+      couldDeliver: false,
+      logOnly: true
+    })
   })
 })
 
