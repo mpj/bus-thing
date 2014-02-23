@@ -7,16 +7,6 @@ var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
 
-// TODO: Use interpret in more places
-
-var interpret = function() {
-  var args = isArguments(arguments[0]) ? arguments[0] : arguments
-  var arr = isArray(args[0]) ? args[0] : [ args[0], args[1] ]
-  if (isUndefined(arr[1]))
-    arr[1] = true
-  return arr
-}
-
 var createBus = function() {
   var me = {}
 
@@ -33,12 +23,12 @@ var createBus = function() {
 
   me.log = {
     all: function() { return logEntries },
-    wasSent: function(addr, msg) {
+    wasSent: function(address, message) {
       return !!find(logEntries, function(entry) {
         return !!find(entry.sent, function(delivery) {
-          if (addr !== delivery.envelope[0])
+          if (address !== delivery.envelope.address)
             return false
-          if (msg && !deepEqual(msg, delivery.envelope[1]))
+          if (message && !deepEqual(message, delivery.envelope.message))
             return false
           return true
         })
@@ -129,9 +119,11 @@ var createBus = function() {
     matchingObservers.forEach(function(handler) {
 
       var receivedDeliveries = handler.triggers.map(function(trigger) {
-        var message = lastMessageMap[trigger.address]
         return {
-          envelope: [ trigger.address, message ],
+          envelope: {
+            address: trigger.address,
+            message: lastMessageMap[trigger.address]
+          },
           trigger: trigger.type
         }
       })
@@ -142,17 +134,19 @@ var createBus = function() {
       }
       logEntries.push(entry)
 
-      function loggingSend() {
-        var envelope = interpret(arguments)
+      function loggingSend(address, message) {
         entry.sent.push({
-          envelope: envelope,
-          couldDeliver: send.apply(null, envelope)
+          envelope: {
+            address: address,
+            message: isUndefined(message) ? true : message
+          },
+          couldDeliver: send(address, message)
         })
       }
 
       var commands = { send: loggingSend }
       handler.worker.apply(commands, receivedDeliveries.map(function(delivery) {
-        return delivery.envelope[1]
+        return delivery.envelope.message
       }))
       handler.triggers.forEach(function(trigger) {
         if (trigger.type === 'next')
@@ -164,8 +158,10 @@ var createBus = function() {
   }
 
   // Inject a message into the bus from the outside
-  me.inject = function() {
-    var envelope = interpret(arguments)
+  me.inject = function(address, message) {
+
+    message = isUndefined(message) ? true : message
+
     // It's a common mistake to call .inject on the
     // main bus instead of this.send, catch that:
     if (isWorker(me.inject.caller))
@@ -177,8 +173,11 @@ var createBus = function() {
     logEntries.push(logEntry)
 
     logEntry.sent.push({
-      envelope: envelope,
-      couldDeliver: send.apply(null, envelope)
+      envelope: {
+        address: address,
+        message: message
+      },
+      couldDeliver: send(address, message)
     })
 
   }

@@ -26,14 +26,20 @@ describe('BusThing', function() {
       injected: true,
       sent: [
         {
-          envelope: [ 'greeting', 'hello!' ],
+          envelope: {
+            address: 'greeting',
+            message: 'hello!'
+          },
           couldDeliver: true
         }
       ]
     })
     bus.log.all()[1].should.deep.equal({
       received: [{
-        envelope: [ 'greeting', 'hello!' ],
+        envelope: {
+          address: 'greeting',
+          message: 'hello!'
+        },
         trigger: 'on'
       }],
       sent: []
@@ -48,13 +54,19 @@ describe('BusThing', function() {
     bus.log.all()[1].should.deep.equal({
       received: [
         {
-          envelope: [ 'greeting', 'hai world' ],
+          envelope: {
+            address: 'greeting',
+            message: 'hai world'
+          },
           trigger: 'on'
         }
       ],
       sent: [
         {
-          envelope: [ 'render', 'hai world' ],
+          envelope: {
+            address: 'render',
+            message: 'hai world'
+          },
           couldDeliver: false
         }
       ]
@@ -95,11 +107,17 @@ describe('BusThing', function() {
     bus.inject('a')
     bus.log.all()[1].sent.should.deep.equal([
       {
-        envelope: [ 'b', true ],
+        envelope: {
+          address: 'b',
+          message: true
+        },
         couldDeliver: true
       },
       {
-        envelope: [ 'c', true ],
+        envelope: {
+          address: 'c',
+          message: true
+        },
         couldDeliver: false
       }
     ])
@@ -171,14 +189,14 @@ describe('BusThing', function() {
       injected: true,
       sent: [
         {
-          envelope: [
-            'picky-handler',
-            {
+          envelope: {
+            address: 'picky-handler',
+            message: {
               arr: [
                 { prop: 2 } // <- different
               ]
             }
-          ],
+          },
           couldDeliver: false
         }
       ]
@@ -190,7 +208,10 @@ describe('BusThing', function() {
     })
     bus.log.all()[2].sent.should.deep.equal([
       {
-        envelope: [ 'ok', true ],
+        envelope: {
+          address: 'ok',
+          message: true
+        },
         couldDeliver: false
       }
     ])
@@ -251,7 +272,10 @@ describe('BusThing', function() {
     bus.on('cook').then('oven-on', true)
     bus.inject('cook')
     bus.log.all()[1].sent.should.deep.equal([{
-      envelope: [ 'oven-on', true ],
+      envelope: {
+        address: 'oven-on',
+        message: true
+      },
       couldDeliver: false
     }])
   })
@@ -297,11 +321,17 @@ describe('BusThing', function() {
     })
     bus.inject('start')
     bus.log.all()[0].sent.should.deep.equal([{
-      envelope: [ 'start', true ],
+      envelope: {
+        address: 'start',
+        message: true
+      },
       couldDeliver: true
     }])
     bus.log.all()[1].sent.should.deep.equal([{
-      envelope: [ 'hai', true ],
+      envelope: {
+        address: 'hai',
+        message: true
+      },
       couldDeliver: false
     }])
 
@@ -322,12 +352,18 @@ describe('BusThing', function() {
     })
     bus.inject('start', null)
     bus.log.all()[0].sent.should.deep.equal([{
-      envelope: [ 'start', null ],
+      envelope: {
+        address: 'start',
+        message: null
+      },
       couldDeliver: true
     }])
 
     bus.log.all()[1].sent.should.deep.equal([{
-      envelope: [ 'hai', null ],
+      envelope: {
+        address: 'hai',
+        message: null
+      },
       couldDeliver: false
     }])
 
@@ -346,7 +382,10 @@ describe('BusThing', function() {
     bus.inject('a')
     bus.log.all()[1].sent.should.deep.equal([{
       couldDeliver: false,
-      envelope: [ 'b', true ]
+      envelope: {
+        address: 'b',
+        message: true
+      }
     }])
   })
 })
