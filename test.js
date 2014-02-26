@@ -4,10 +4,7 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: Pure log functionality - will never be passed to worker,
-// used mainly to support expect failures and Ok
-// TODO: Warn if on never had a then
-
+// TODO: Wild / pure workers
 
 // TODO: Circular references. See
 // http://knockoutjs.com/documentation/computedObservables.html
@@ -429,6 +426,64 @@ describe('BusThing', function() {
       logOnly: true
     })
   })
+
+  describe('when aaron sends property object to b on a', function() {
+    beforeEach(function() {
+      bus
+        .on('a')
+        .then(function aaron() {
+          this.send('b', { myProp: 'myVal' })
+        })
+        .inject('a')
+    })
+
+    describe('log sender helper will say that', function() {
+
+      it('it did', function() {
+        bus.log
+          .sender('aaron')
+          .didSend('b')
+          .should.be.true
+      })
+
+      it('it did send the message that it did', function() {
+        bus.log
+          .sender('aaron')
+          .didSend('b', { myProp: 'myVal' })
+          .should.be.true
+      })
+
+      it('it did NOT if one property differs', function() {
+        bus.log
+          .sender('aaron')
+          .didSend('b', { myProp: 'otherVal' })
+          .should.be.false
+      })
+
+      it('it did NOT send a completely different delivery', function() {
+        bus.log
+          .sender('aaron')
+          .didSend('c')
+          .should.be.false
+      })
+
+      it('another worker did NOT send that message', function() {
+        bus.log
+          .sender('wayne')
+          .didSend({ myProp: 'otherVal' })
+          .should.be.false
+      })
+
+      it('the injector did send its message', function() {
+        bus.log
+          .sender('injector')
+          .didSend('a')
+          .should.be.true
+      })
+
+    })
+  })
+
 })
 
 function dbg(bus) {

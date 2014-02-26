@@ -40,6 +40,27 @@ var createBus = function() {
           return true
         })
       })
+    },
+    sender: function(didSenderName) {
+      return {
+        didSend: function(didAddress, didMessage) {
+          return !!find(logEntries, function(entry) {
+            if (entry.sender.name !== didSenderName)
+              return false
+
+            return !!find(entry.sent, function(delivery) {
+              if (didAddress !== delivery.envelope.address)
+                return false
+
+              if (!!didMessage &&
+                   !deepEqual(didMessage, delivery.envelope.message))
+                return false
+              return true
+            })
+          })
+        }
+
+      }
     }
   }
 
