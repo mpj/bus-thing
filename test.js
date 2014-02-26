@@ -6,9 +6,6 @@ chai.should()
 
 // TODO: Way too messy test suite, needs cleanup
 
-
-// TODO: "Sender" should be the more generic "worker"
-// because sender.didSend == false does not make sense
 //
 // TODO: Wild / pure workers
 
@@ -32,7 +29,7 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hello!')
     bus.log.all()[0].should.deep.equal({
-      sender: {
+      worker: {
         name: 'injector'
       },
       sent: [
@@ -53,7 +50,7 @@ describe('BusThing', function() {
         },
         trigger: 'on'
       }],
-      sender: {
+      worker: {
         name: null
       },
       sent: []
@@ -76,7 +73,7 @@ describe('BusThing', function() {
           trigger: 'on'
         }
       ],
-      sender: {
+      worker: {
         name: null
       },
       sent: [
@@ -204,7 +201,7 @@ describe('BusThing', function() {
       ]
     })
     bus.log.all()[0].should.deep.equal({
-      sender: {
+      worker: {
         name: 'injector'
       },
       sent: [
@@ -409,15 +406,15 @@ describe('BusThing', function() {
     }])
   })
 
-  it('logs function name as sender name', function() {
+  it('logs function name as worker name', function() {
     bus.on('start').then(function startHandler() {
       this.send('bam!')
     })
     bus.inject('start')
-    bus.log.all()[1].sender.name.should.equal('startHandler')
+    bus.log.all()[1].worker.name.should.equal('startHandler')
 
     // TODO: Piggybacking on this test, needs cleanup
-    bus.log.sender('startHandler').didLog('bam!')
+    bus.log.worker('startHandler').didLog('bam!')
       .should.be.false
   })
 
@@ -451,46 +448,46 @@ describe('BusThing', function() {
         .inject('a')
     })
 
-    describe('log sender helper will say that', function() {
+    describe('log worker helper will say that', function() {
 
       it('it did', function() {
         bus.log
-          .sender('aaron')
+          .worker('aaron')
           .didSend('b')
           .should.be.true
       })
 
       it('it did send the message that it did', function() {
         bus.log
-          .sender('aaron')
+          .worker('aaron')
           .didSend('b', { myProp: 'myVal' })
           .should.be.true
       })
 
       it('it did NOT if one property differs', function() {
         bus.log
-          .sender('aaron')
+          .worker('aaron')
           .didSend('b', { myProp: 'otherVal' })
           .should.be.false
       })
 
       it('it did NOT send a completely different delivery', function() {
         bus.log
-          .sender('aaron')
+          .worker('aaron')
           .didSend('c')
           .should.be.false
       })
 
       it('another worker did NOT send that message', function() {
         bus.log
-          .sender('wayne')
+          .worker('wayne')
           .didSend({ myProp: 'otherVal' })
           .should.be.false
       })
 
       it('the injector did send its message', function() {
         bus.log
-          .sender('injector')
+          .worker('injector')
           .didSend('a')
           .should.be.true
       })
@@ -510,7 +507,7 @@ describe('BusThing', function() {
 
     it('didLog was true', function() {
       bus.log
-        .sender('eavesDropper')
+        .worker('eavesDropper')
         .didLog('someone-said', 'hello!!')
 
         .should.be.true

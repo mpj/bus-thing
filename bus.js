@@ -31,15 +31,15 @@ var createBus = function() {
   me.log = {
     all: function() { return logEntries },
     wasSent: function(address, message) {
-      return me.log.sender().didSend(address, message)
+      return me.log.worker(null).didSend(address, message)
     },
     wasLogged: function(address, message) {
-      return me.log.sender().didLog(address, message)
+      return me.log.worker(null).didLog(address, message)
     },
-    sender: function(didSenderName) {
+    worker: function(didSenderName) {
       function didSendOrLog(type, didAddress, didMessage) {
         return !!find(logEntries, function(entry) {
-          if (!!didSenderName && didSenderName !== entry.sender.name)
+          if (!!didSenderName && didSenderName !== entry.worker.name)
             return false
 
           return !!find(entry.sent, function(delivery) {
@@ -157,7 +157,7 @@ var createBus = function() {
 
       var logEntry = {
         received: receivedDeliveries,
-        sender: {
+        worker: {
           name: handler.worker.name === '' ? null : handler.worker.name
         },
         sent: []
@@ -209,7 +209,7 @@ var createBus = function() {
         'Use this.send instead.')
 
     var logEntry = {
-      sender: {
+      worker: {
         name: 'injector'
       },
       sent: []
