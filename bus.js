@@ -31,36 +31,40 @@ var createBus = function() {
   me.log = {
     all: function() { return logEntries },
     wasSent: function(address, message) {
-      return !!find(logEntries, function(entry) {
-        return !!find(entry.sent, function(delivery) {
-          if (address !== delivery.envelope.address)
-            return false
-          if (message && !deepEqual(message, delivery.envelope.message))
-            return false
-          return true
-        })
-      })
+      return me.log.sender().didSend(address, message)
+    },
+    wasLogged: function(address, message) {
+      return me.log.sender().didLog(address, message)
     },
     sender: function(didSenderName) {
-      return {
-        didSend: function(didAddress, didMessage) {
-          return !!find(logEntries, function(entry) {
-            if (entry.sender.name !== didSenderName)
+      function didSendOrLog(type, didAddress, didMessage) {
+        return !!find(logEntries, function(entry) {
+          if (!!didSenderName && didSenderName !== entry.sender.name)
+            return false
+
+          return !!find(entry.sent, function(delivery) {
+
+            if (type === 'log' && !delivery.logOnly)
               return false
 
-            return !!find(entry.sent, function(delivery) {
-              if (didAddress !== delivery.envelope.address)
-                return false
+            if (type === 'send' && !!delivery.logOnly)
+              return false
 
-              if (!!didMessage &&
-                   !deepEqual(didMessage, delivery.envelope.message))
-                return false
-              return true
-            })
+            if (didAddress !== delivery.envelope.address)
+              return false
+
+            if (!!didMessage &&
+                 !deepEqual(didMessage, delivery.envelope.message))
+              return false
+            return true
           })
-        }
-
+        })
       }
+      var cmd = {
+        didSend: partial(didSendOrLog, 'send'),
+        didLog:  partial(didSendOrLog, 'log')
+      }
+      return cmd
     }
   }
 

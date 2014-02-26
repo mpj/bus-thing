@@ -4,10 +4,19 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
+// TODO: Way too messy test suite, needs cleanup
+
+
+// TODO: "Sender" should be the more generic "worker"
+// because sender.didSend == false does not make sense
+//
 // TODO: Wild / pure workers
 
 // TODO: Circular references. See
 // http://knockoutjs.com/documentation/computedObservables.html
+//
+// THOUGHT: Make log a bit less public, and encourage use of the
+// helper functions
 
 
 describe('BusThing', function() {
@@ -49,6 +58,7 @@ describe('BusThing', function() {
       },
       sent: []
     })
+    bus.log.wasLogged('greeting','hello!').should.be.false
   })
 
   it('sends response', function() {
@@ -399,12 +409,16 @@ describe('BusThing', function() {
     }])
   })
 
-  it('logs function name as worker', function() {
+  it('logs function name as sender name', function() {
     bus.on('start').then(function startHandler() {
       this.send('bam!')
     })
     bus.inject('start')
     bus.log.all()[1].sender.name.should.equal('startHandler')
+
+    // TODO: Piggybacking on this test, needs cleanup
+    bus.log.sender('startHandler').didLog('bam!')
+      .should.be.false
   })
 
   it('using logging does NOT trigger handlers', function(){
@@ -482,6 +496,38 @@ describe('BusThing', function() {
       })
 
     })
+  })
+
+  describe('if a worker only logs a delivery', function() {
+    beforeEach(function() {
+      bus
+       .on('say')
+       .then(function eavesDropper(x) {
+         this.log('someone-said', x)
+       })
+       .inject('say','hello!!')
+    })
+
+    it('didLog was true', function() {
+      bus.log
+        .sender('eavesDropper')
+        .didLog('someone-said', 'hello!!')
+
+        .should.be.true
+    })
+
+    it('wasLogged is true', function() {
+      bus.log
+        .wasLogged('someone-said', 'hello!!')
+        .should.be.true
+    })
+
+    it('wasSent is false', function() {
+      bus.log
+        .wasSent('someone-said', 'hello!!')
+        .should.be.false
+    })
+
   })
 
 })
