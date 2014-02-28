@@ -5,9 +5,13 @@ var expect = chai.expect
 chai.should()
 
 // TODO: Way too messy test suite, needs cleanup
-
 //
+// TODO: Go over couldDeliver tag, check if it's on
+// received logs and if so remove them
+
 // TODO: Wild / pure workers
+// TODO: Disallow functions and regexp in as messages
+// TODO: Disallow anything but string as addess
 
 // TODO: Circular references. See
 // http://knockoutjs.com/documentation/computedObservables.html
@@ -32,28 +36,29 @@ describe('BusThing', function() {
       worker: {
         name: 'injector'
       },
-      sent: [
+      deliveries: [
         {
           envelope: {
             address: 'greeting',
             message: 'hello!'
           },
+          sent: true,
           couldDeliver: true
         }
       ]
     })
     bus.log.all()[1].should.deep.equal({
-      received: [{
+      deliveries: [{
         envelope: {
           address: 'greeting',
           message: 'hello!'
         },
+        received: true,
         trigger: 'on'
       }],
       worker: {
         name: null
-      },
-      sent: []
+      }
     })
     bus.log.wasLogged('greeting','hello!').should.be.false
   })
@@ -64,27 +69,26 @@ describe('BusThing', function() {
     })
     bus.inject('greeting', 'hai world')
     bus.log.all()[1].should.deep.equal({
-      received: [
+      deliveries: [
         {
+          received: true,
+          trigger: 'on',
           envelope: {
             address: 'greeting',
             message: 'hai world'
-          },
-          trigger: 'on'
-        }
-      ],
-      worker: {
-        name: null
-      },
-      sent: [
-        {
+          }
+        },{
+          sent: true,
           envelope: {
             address: 'render',
             message: 'hai world'
           },
           couldDeliver: false
         }
-      ]
+      ],
+      worker: {
+        name: null
+      }
     })
     bus.log.all().length.should.equal(2)
 
@@ -120,8 +124,16 @@ describe('BusThing', function() {
         this.send('d')
       })
     bus.inject('a')
-    bus.log.all()[1].sent.should.deep.equal([
+    bus.log.all()[1].deliveries.should.deep.equal([
       {
+        received: true,
+        trigger: 'on',
+        envelope: {
+          address: "a",
+          message: true
+        }
+      },{
+        sent: true,
         envelope: {
           address: 'b',
           message: true
@@ -129,12 +141,13 @@ describe('BusThing', function() {
         couldDeliver: true
       },
       {
+        sent: true,
         envelope: {
           address: 'c',
           message: true
         },
         couldDeliver: false
-      }
+      },
     ])
   })
 
@@ -204,8 +217,9 @@ describe('BusThing', function() {
       worker: {
         name: 'injector'
       },
-      sent: [
+      deliveries: [
         {
+          sent: true,
           envelope: {
             address: 'picky-handler',
             message: {
@@ -223,15 +237,14 @@ describe('BusThing', function() {
         { prop: 1 } // <- correct
       ]
     })
-    bus.log.all()[2].sent.should.deep.equal([
-      {
-        envelope: {
-          address: 'ok',
-          message: true
-        },
-        couldDeliver: false
-      }
-    ])
+    bus.log.all()[2].deliveries[1].should.deep.equal({
+      sent: true,
+      envelope: {
+        address: 'ok',
+        message: true
+      },
+      couldDeliver: false
+    })
   })
 
 
@@ -288,13 +301,14 @@ describe('BusThing', function() {
   it('then accepts pure envelopes', function() {
     bus.on('cook').then('oven-on', true)
     bus.inject('cook')
-    bus.log.all()[1].sent.should.deep.equal([{
+    bus.log.all()[1].deliveries[1].should.deep.equal({
+      sent: true,
       envelope: {
         address: 'oven-on',
         message: true
       },
       couldDeliver: false
-    }])
+    })
   })
 
   it('wasSent (true)', function() {
@@ -337,20 +351,22 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start')
-    bus.log.all()[0].sent.should.deep.equal([{
+    bus.log.all()[0].deliveries[0].should.deep.equal({
+      sent: true,
       envelope: {
         address: 'start',
         message: true
       },
       couldDeliver: true
-    }])
-    bus.log.all()[1].sent.should.deep.equal([{
+    })
+    bus.log.all()[1].deliveries[1].should.deep.equal({
+      sent: true,
       envelope: {
         address: 'hai',
         message: true
       },
       couldDeliver: false
-    }])
+    })
 
   })
 
@@ -368,21 +384,23 @@ describe('BusThing', function() {
       done()
     })
     bus.inject('start', null)
-    bus.log.all()[0].sent.should.deep.equal([{
+    bus.log.all()[0].deliveries[0].should.deep.equal({
+      sent: true,
       envelope: {
         address: 'start',
         message: null
       },
       couldDeliver: true
-    }])
+    })
 
-    bus.log.all()[1].sent.should.deep.equal([{
+    bus.log.all()[1].deliveries[1].should.deep.equal({
+      sent: true,
       envelope: {
         address: 'hai',
         message: null
       },
       couldDeliver: false
-    }])
+    })
 
   })
 
@@ -397,13 +415,14 @@ describe('BusThing', function() {
   it('unhandled should show interpretation', function() {
     bus.on('a').then(function() { this.send('b') })
     bus.inject('a')
-    bus.log.all()[1].sent.should.deep.equal([{
+    bus.log.all()[1].deliveries[1].should.deep.equal({
+      sent: true,
       couldDeliver: false,
       envelope: {
         address: 'b',
         message: true
       }
-    }])
+    })
   })
 
   it('logs function name as worker name', function() {
@@ -428,13 +447,14 @@ describe('BusThing', function() {
 
     triggers.should.equal(1)
 
-    bus.log.all()[1].sent[0].should.deep.equal({
+    bus.log.all()[1].deliveries[1].should.deep.equal({
+      sent: true,
+      logOnly: true,
       envelope: {
         address: 'a',
         message: true
       },
-      couldDeliver: false,
-      logOnly: true
+      couldDeliver: false
     })
   })
 

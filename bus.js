@@ -42,7 +42,10 @@ var createBus = function() {
           if (!!didSenderName && didSenderName !== entry.worker.name)
             return false
 
-          return !!find(entry.sent, function(delivery) {
+          return !!find(entry.deliveries, function(delivery) {
+
+            if (delivery.sent !== true)
+              return false
 
             if (type === 'log' && !delivery.logOnly)
               return false
@@ -147,36 +150,38 @@ var createBus = function() {
 
       var receivedDeliveries = handler.triggers.map(function(trigger) {
         return {
+          received: true,
+          trigger: trigger.type,
           envelope: {
             address: trigger.address,
             message: lastMessageMap[trigger.address]
-          },
-          trigger: trigger.type
+          }
         }
       })
 
       var logEntry = {
-        received: receivedDeliveries,
+        deliveries: receivedDeliveries,
         worker: {
           name: handler.worker.name === '' ? null : handler.worker.name
-        },
-        sent: []
+        }
       }
       logEntries.push(logEntry)
 
       function loggingSend() {
         var envelope = envelopeFrom(arguments)
-        logEntry.sent.push({
+        logEntry.deliveries.push({
+          sent: true,
           envelope: envelope,
           couldDeliver: send(envelope)
         })
       }
 
       function logOnly() {
-        logEntry.sent.push({
+        logEntry.deliveries.push({
+          sent: true,
+          logOnly: true,
           envelope: envelopeFrom(arguments),
-          couldDeliver: false,
-          logOnly: true
+          couldDeliver: false
         })
       }
 
@@ -212,11 +217,12 @@ var createBus = function() {
       worker: {
         name: 'injector'
       },
-      sent: []
+      deliveries: []
     }
     logEntries.push(logEntry)
 
-    logEntry.sent.push({
+    logEntry.deliveries.push({
+      sent: true,
       envelope: envelope,
       couldDeliver: send(envelope)
     })
