@@ -13,6 +13,8 @@ chai.should()
 // TODO: Disallow functions and regexp in as messages
 // TODO: Disallow anything but string as addess
 
+// TODO: Unhandled exceptions
+
 // TODO: Circular references. See
 // http://knockoutjs.com/documentation/computedObservables.html
 //
