@@ -4,7 +4,12 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
+// TODO: .sentAtLeastOnce
 // TODO: Way too messy test suite, needs cleanup
+//
+// TODO: Error on more than one argument to given (passing list instead of args)
+//       ... or perhaps make this allowed behavior?
+//
 //
 // TODO: Pretty sure that .next has a bug - I think it can be restored
 // to a 'peek' prematurely if it's part of an observer that is triggerd
@@ -504,6 +509,13 @@ describe('BusThing', function() {
           .should.be.true
       })
 
+      it('it did send in general', function() {
+        bus.log
+          .worker('aaron')
+          .didSend()
+          .should.be.true
+      })
+
       it('it did NOT if one property differs', function() {
         bus.log
           .worker('aaron')
@@ -522,6 +534,13 @@ describe('BusThing', function() {
         bus.log
           .worker('wayne')
           .didSend({ myProp: 'otherVal' })
+          .should.be.false
+      })
+
+      it('another worker did NOT send in general', function() {
+        bus.log
+          .worker('wayne')
+          .didSend()
           .should.be.false
       })
 

@@ -47,7 +47,7 @@ var createBus = function() {
           if (type === 'send' && !!delivery.logOnly)
             return false
 
-          if (address !== delivery.envelope.address)
+          if (!!address && address !== delivery.envelope.address)
             return false
 
           if (!!message &&
