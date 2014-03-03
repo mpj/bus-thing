@@ -6,6 +6,7 @@ var deepEqual = require('deep-equal')
 var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
+var toArray = require('mout/lang/toArray')
 
 function envelopeFrom(args) {
   // TODO: Verify message format
@@ -28,6 +29,48 @@ var createBus = function() {
     })
   }
 
+  // type = 'log' or 'send'
+  function locateSent(senderName, type, address, message) {
+    var matchingDeliveries = [];
+    logEntries.forEach(function(entry) {
+      if (!!senderName && senderName !== entry.worker.name)
+        return;
+
+      matchingDeliveries = matchingDeliveries.concat(
+        entry.deliveries.filter(function(delivery) {
+          if (delivery.sent !== true)
+            return false
+
+          if (type === 'log' && !delivery.logOnly)
+            return false
+
+          if (type === 'send' && !!delivery.logOnly)
+            return false
+
+          if (address !== delivery.envelope.address)
+            return false
+
+          if (!!message &&
+               !deepEqual(message, delivery.envelope.message))
+            return false
+
+          return true
+        })
+      )
+    })
+    return matchingDeliveries;
+  }
+
+  // Creates a wrapper around a function that makes it return
+  // true if the wrapped function returns an array with 0
+  // or more items. Arguments to the wrapping function
+  // are passed through to the wrapped function.
+  function oneOrMore(fn) {
+    return function() {
+      return fn.apply(null, toArray(arguments)).length > 0
+    }
+  }
+
   me.log = {
     all: function() { return logEntries },
     wasSent: function(address, message) {
@@ -36,36 +79,16 @@ var createBus = function() {
     wasLogged: function(address, message) {
       return me.log.worker(null).didLog(address, message)
     },
+    lastSent: function(address) {
+      var deliveriesSentOnAddress = locateSent(null, 'send', address)
+      var lastDeliveryOnAddress = deliveriesSentOnAddress.pop()
+      if (!lastDeliveryOnAddress) return null
+      return lastDeliveryOnAddress.envelope.message
+    },
     worker: function(didSenderName) {
-      function didSendOrLog(type, didAddress, didMessage) {
-        return !!find(logEntries, function(entry) {
-          if (!!didSenderName && didSenderName !== entry.worker.name)
-            return false
-
-          return !!find(entry.deliveries, function(delivery) {
-
-            if (delivery.sent !== true)
-              return false
-
-            if (type === 'log' && !delivery.logOnly)
-              return false
-
-            if (type === 'send' && !!delivery.logOnly)
-              return false
-
-            if (didAddress !== delivery.envelope.address)
-              return false
-
-            if (!!didMessage &&
-                 !deepEqual(didMessage, delivery.envelope.message))
-              return false
-            return true
-          })
-        })
-      }
       var cmd = {
-        didSend: partial(didSendOrLog, 'send'),
-        didLog:  partial(didSendOrLog, 'log')
+        didSend: oneOrMore(partial(locateSent, didSenderName, 'send')),
+        didLog:  oneOrMore(partial(locateSent, didSenderName, 'log'))
       }
       return cmd
     }

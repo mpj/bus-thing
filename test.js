@@ -549,6 +549,24 @@ describe('BusThing', function() {
 
   })
 
+  describe('when we send twice to an address', function() {
+    beforeEach(function() {
+      bus.on('a').then(function() {
+        this.send('b', 3)
+        this.send('b', 4)
+      }).inject('a')
+    })
+
+    it('lastSent should equal the second value', function() {
+      bus.log.lastSent('b').should.equal(4)
+    })
+
+    it('lastSent should be null on other addresses', function() {
+      expect(bus.log.lastSent('c')).to.be.null
+    })
+  })
+
+
 })
 
 function dbg(bus) {
