@@ -4,7 +4,7 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-// TODO: .sentAtLeastOnce
+
 // TODO: Way too messy test suite, needs cleanup
 //
 // TODO: Error on more than one argument to given (passing list instead of args)
@@ -17,7 +17,10 @@ chai.should()
 
 // TODO: Wild / pure workers
 // TODO: Disallow functions and regexp in as messages
-// TODO: Disallow anything but string as addess
+
+
+// TODO: Throw an error if a worker returns something, to prevent
+// accidental returns over sends.
 
 // TODO: Unhandled exceptions
 
@@ -301,6 +304,17 @@ describe('BusThing', function() {
         // this would never have been executed
       })
     }).should.throw('Second argument to "on" was a function. Expected message matcher. You probably meant to use .then()')
+  })
+
+  it('throws an error if passing something other than a string as address', function(done) {
+    bus.on('greeting').then(function(x) {
+      var me = this;
+      (function() {
+        me.send(123)
+      }).should.throw(
+        'First argument was non-string. Should be address.')
+      done()
+    }).inject('greeting')
   })
 
   it('errors when calling bus.inject from inside transform', function() {

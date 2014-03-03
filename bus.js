@@ -1,4 +1,5 @@
 var isArray = require('mout/lang/isArray')
+var isString = require('mout/lang/isString')
 var pluck = require('mout/array/pluck')
 var find = require('mout/array/find')
 var partial = require('mout/function/partial')
@@ -9,7 +10,8 @@ var isArguments = require('is-arguments')
 var toArray = require('mout/lang/toArray')
 
 function envelopeFrom(args) {
-  // TODO: Verify message format
+  if (!isString(args[0]))
+    throw new Error('First argument was non-string. Should be address.')
   return {
     address: args[0],
     message: isUndefined(args[1]) ? true : args[1]
