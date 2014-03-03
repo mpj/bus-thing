@@ -5,9 +5,6 @@ var expect = chai.expect
 chai.should()
 
 // TODO: Way too messy test suite, needs cleanup
-//
-// TODO: Go over couldDeliver tag, check if it's on
-// received logs and if so remove them
 
 // TODO: Wild / pure workers
 // TODO: Disallow functions and regexp in as messages
