@@ -5,6 +5,10 @@ var expect = chai.expect
 chai.should()
 
 // TODO: Way too messy test suite, needs cleanup
+//
+// TODO: Pretty sure that .next has a bug - I think it can be restored
+// to a 'peek' prematurely if it's part of an observer that is triggerd
+// when another message is changed.
 
 // TODO: Wild / pure workers
 // TODO: Disallow functions and regexp in as messages
@@ -267,6 +271,23 @@ describe('BusThing', function() {
     bus.inject('isReady', true)
 
     sent.should.deep.equal([true, true])
+  })
+
+  it('peek', function() {
+    var arr = []
+    bus
+      .on('a')
+      .peek('b')
+      .then(function(a, b) {
+        arr.push(b)
+      })
+
+    bus.inject('b', 2)
+    arr.length.should.equal(0)
+    bus.inject('a', 1)
+    arr.length.should.equal(1)
+    arr[0].should.equal(2)
+
   })
 
   it('throws an error when accidentally using node callbacks', function() {

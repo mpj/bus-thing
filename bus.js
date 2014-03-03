@@ -125,7 +125,8 @@ var createBus = function() {
     [ 'on',
       'change',
       'next',
-      'when'
+      'when',
+      'peek'
     ].forEach(function(type) {
       target[type] = partial(addTrigger, type, triggers)
     })
