@@ -216,9 +216,13 @@ var createBus = function() {
         log: logOnly
       }
 
-      handler.worker.apply(commands, receivedDeliveries.map(function(delivery) {
+      var workerArgs = receivedDeliveries.map(function(delivery) {
         return delivery.envelope.message
-      }))
+      })
+      var returnValue = handler.worker.apply(commands, workerArgs)
+      if (!isUndefined(returnValue))
+        throw new Error('Worker returned a value. Use this.send instead.')
+
       handler.triggers.forEach(function(trigger) {
         if (trigger.type === 'next')
           trigger.type = 'peek'

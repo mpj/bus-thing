@@ -4,7 +4,6 @@ var chai = require('chai')
 var expect = chai.expect
 chai.should()
 
-
 // TODO: Way too messy test suite, needs cleanup
 //
 // TODO: Error on more than one argument to given (passing list instead of args)
@@ -18,11 +17,8 @@ chai.should()
 // TODO: Wild / pure workers
 // TODO: Disallow functions and regexp in as messages
 
-
-// TODO: Throw an error if a worker returns something, to prevent
-// accidental returns over sends.
-
-// TODO: Unhandled exceptions
+// TODO: Unhandled exceptions (especially look at the ones we generate,
+// like the worker-returned value error)
 
 // TODO: Circular references. See
 // http://knockoutjs.com/documentation/computedObservables.html
@@ -315,6 +311,15 @@ describe('BusThing', function() {
         'First argument was non-string. Should be address.')
       done()
     }).inject('greeting')
+  })
+
+  it('throws an error if passing something other than a string as address', function() {
+    (function() {
+      bus.on('greeting').then(function(x) {
+        return 123
+      }).inject('greeting')
+    }).should.throw('Worker returned a value. Use this.send instead.')
+
   })
 
   it('errors when calling bus.inject from inside transform', function() {
