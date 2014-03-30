@@ -87,10 +87,15 @@ var createBus = function() {
       if (!lastDeliveryOnAddress) return null
       return lastDeliveryOnAddress.envelope.message
     },
-    worker: function(didSenderName) {
+    worker: function(workerName) {
       var cmd = {
-        didSend: oneOrMore(partial(locateSent, didSenderName, 'send')),
-        didLog:  oneOrMore(partial(locateSent, didSenderName, 'log'))
+        didSend: oneOrMore(partial(locateSent, workerName, 'send')),
+        didLog:  oneOrMore(partial(locateSent, workerName, 'log')),
+        didRun: function() {
+          return !!find(logEntries, function(entry) {
+            return entry.worker.name === workerName
+          })
+        }
       }
       return cmd
     }

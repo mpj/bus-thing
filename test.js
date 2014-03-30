@@ -70,6 +70,14 @@ describe('BusThing', function() {
     bus.log.wasLogged('greeting','hello!').should.be.false
   })
 
+  it('message matcher in on', function() {
+    bus.on('hello', 1).then(function workerOne() {})
+    bus.on('hello', 2).then(function workerTwo() {})
+    bus.inject('hello',2)
+    bus.log.worker('workerOne').didRun().should.equal.false
+    bus.log.worker('workerTow').didRun().should.equal.false
+  })
+
   it('sends response', function() {
     bus.on('greeting').then(function(x) {
       this.send('render', x)
@@ -603,6 +611,32 @@ describe('BusThing', function() {
         .should.be.false
     })
 
+  })
+
+  describe('if a worker sends nothing', function() {
+    var shybus;
+    beforeEach(function() {
+      shybus =
+        bus
+          .on('say-something')
+          .then(function shy() {
+            // ... silence
+          })
+    })
+
+    it('didRun should be false', function() {
+      bus.log.worker('shy').didRun().should.be.false
+    })
+
+    describe('but once it runs', function() {
+      beforeEach(function() {
+        bus.inject('say-something')
+      })
+
+      it('didRun should be true', function() {
+        bus.log.worker('shy').didRun().should.be.true
+      })
+    })
   })
 
   describe('when we send twice to an address', function() {
