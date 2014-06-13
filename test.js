@@ -74,8 +74,9 @@ describe('BusThing', function() {
     bus.on('hello', 1).then(function workerOne() {})
     bus.on('hello', 2).then(function workerTwo() {})
     bus.inject('hello',2)
-    bus.log.worker('workerOne').didRun().should.equal.false
-    bus.log.worker('workerTow').didRun().should.equal.false
+    bus.log.worker('workerOne').didRun().should.be.false
+    bus.log.worker('workerTwo').didRun().should.be.true
+  })
   })
 
   it('sends response', function() {
