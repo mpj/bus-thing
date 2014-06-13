@@ -79,11 +79,13 @@ describe('BusThing', function() {
   })
 
   it('should ignore extra properties when matching messages', function() {
-    bus.on('hi', { propA: 1, propB: { propC: 2 }})
+    bus.on('hi', { propB: { propC: 2 }})
       .then(function workerOne() {})
-    bus.on('hi', { propA: 1, propB: { propC: 3 }})
+    bus.on('hi', {  propB: { propC: 3 }})
       .then(function workerTwo() {})
-    bus.inject('hi', { propB: { propC: 2 }})
+    bus.inject('hi', {
+      propA: 1,  // <- should be ignored
+      propB: { propC: 2 }})
     bus.log.worker('workerOne').didRun().should.be.true
     bus.log.worker('workerTwo').didRun().should.be.false
   })

@@ -158,7 +158,8 @@ var createBus = function() {
         if (trigger.address !== sent.address)
           return false;
 
-        if (trigger.message && !deepMatches(trigger.message, sent.message))
+
+        if (trigger.message && !deepMatches(sent.message, trigger.message))
           return false;
 
         if(trigger.type === 'change' && !wasChanged)
