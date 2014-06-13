@@ -143,7 +143,7 @@ var createBus = function() {
 
   var send = function(sent) {
 
-    // Make a not if this is message differs from the
+    // Make a note if this is message differs from the
     // last message sent on the same address before changing it.
     var wasChanged = !deepEqual(lastMessageMap[sent.address], sent.message)
 
