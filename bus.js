@@ -4,6 +4,7 @@ var pluck = require('mout/array/pluck')
 var find = require('mout/array/find')
 var partial = require('mout/function/partial')
 var deepEqual = require('deep-equal')
+var deepMatches = require('mout/object/deepMatches')
 var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
@@ -53,7 +54,7 @@ var createBus = function() {
             return false
 
           if (!!message &&
-               !deepEqual(message, delivery.envelope.message))
+               !deepMatches(delivery.envelope.message, message))
             return false
 
           return true
@@ -157,7 +158,7 @@ var createBus = function() {
         if (trigger.address !== sent.address)
           return false;
 
-        if (trigger.message && !deepEqual(trigger.message, sent.message))
+        if (trigger.message && !deepMatches(trigger.message, sent.message))
           return false;
 
         if(trigger.type === 'change' && !wasChanged)

@@ -77,6 +77,15 @@ describe('BusThing', function() {
     bus.log.worker('workerOne').didRun().should.be.false
     bus.log.worker('workerTwo').didRun().should.be.true
   })
+
+  it('should ignore extra properties when matching messages', function() {
+    bus.on('hi', { propA: 1, propB: { propC: 2 }})
+      .then(function workerOne() {})
+    bus.on('hi', { propA: 1, propB: { propC: 3 }})
+      .then(function workerTwo() {})
+    bus.inject('hi', { propB: { propC: 2 }})
+    bus.log.worker('workerOne').didRun().should.be.true
+    bus.log.worker('workerTwo').didRun().should.be.false
   })
 
   it('sends response', function() {
@@ -516,7 +525,10 @@ describe('BusThing', function() {
       bus
         .on('a')
         .then(function aaron() {
-          this.send('b', { myProp: 'myVal' })
+          this.send('b', {
+            myProp: 'myVal',
+            myOtherProp: 'myOtherVal'  // ignore this
+          })
         })
         .inject('a')
     })
