@@ -25,6 +25,11 @@ chai.should()
 //
 // THOUGHT: Make log a bit less public, and encourage use of the
 // helper functions
+//
+// THOUGHT: Make a secret flag for send method, that could be
+// used for specs and private events and stuff. Make this overridable
+// in the log. Or this could be the private/public space... In that
+// case, we need a publish instead.
 
 
 describe('BusThing', function() {
