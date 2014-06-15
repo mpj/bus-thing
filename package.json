@@ -1,6 +1,6 @@
 {
   "name": "bus-thing",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "author": "Mattias Petter Johansson <mpj@mpj.me>",
   "description": "Some thing that is a bus?",
   "main": "./bus.js",
