@@ -348,15 +348,16 @@ describe('BusThing', function() {
   })
 
   it('errors when calling bus.inject from inside transform', function() {
-    (function() {
+
       bus
         .on('greeting').then(function(x) {
           bus.inject('hej')
         })
         .inject('greeting')
-    }).should.throw(
-      'Illegal call to inject method from inside handler. ' +
-      'Use this.send instead.')
+
+      bus.log.all()[1].error.message.should.equal(
+        'Illegal call to inject method from inside handler. ' +
+        'Use this.send instead.')
   })
 
   it('should also watch change', function() {
@@ -673,6 +674,40 @@ describe('BusThing', function() {
 
     it('lastSent should be null on other addresses', function() {
       expect(bus.log.lastSent('c')).to.be.null
+    })
+  })
+
+  describe('when a worker throws an error', function() {
+    beforeEach(function() {
+      bus.on('a').then(function() {
+        throw new Error('hej')
+      }).inject('a')
+    })
+
+    it('logs the error', function() {
+      var err = bus.log.all()[1].error
+      err.message.should.equal('hej')
+      err.lineNumber.should.exist
+      err.column.should.exist
+    })
+
+  })
+
+  describe('worker throws error, async', function () {
+    beforeEach(function(done) {
+      bus.on('a').then(function() {
+        setTimeout(function() {
+          throw new Error('hej')
+        }, 10)
+      }).inject('a')
+      setTimeout(done, 11)
+    })
+
+    it('logs the error', function() {
+      var err = bus.log.all()[1].error
+      err.message.should.equal('hej')
+      err.lineNumber.should.exist
+      err.column.should.exist
     })
   })
 

@@ -9,6 +9,8 @@ var isFunction = require('mout/lang/isFunction')
 var isUndefined = require('mout/lang/isUndefined')
 var isArguments = require('is-arguments')
 var toArray = require('mout/lang/toArray')
+var parseStack = require('stacktrace-parser').parse
+var domain = require('domain')
 
 function envelopeFrom(args) {
   if (!isString(args[0]))
@@ -226,7 +228,25 @@ var createBus = function() {
       var workerArgs = receivedDeliveries.map(function(delivery) {
         return delivery.envelope.message
       })
-      var returnValue = handler.worker.apply(commands, workerArgs)
+
+      function handleError(error) {
+        var stack = parseStack(error.stack)
+        logEntry.error = {
+          message: error.message,
+          lineNumber: stack[0].lineNumber,
+          column: stack[0].column,
+        }
+      }
+
+      var returnValue;
+      var d = domain.create();
+      d.on('error', handleError)
+      d.run(function() {
+        try {
+          returnValue = handler.worker.apply(commands, workerArgs)
+        } catch(e) { handleError(e) }
+      });
+
       if (!isUndefined(returnValue))
         throw new Error('Worker returned a value. Use this.send instead.')
 
